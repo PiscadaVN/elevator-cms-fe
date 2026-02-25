@@ -96,6 +96,8 @@ export function ElevatorDashboard() {
     status: "available",
     maintenanceDate: new Date().toISOString().split('T')[0],
     assignedUserId: null,
+    maintenanceCycle: "1m",
+    startDate: new Date().toISOString().split('T')[0],
   })
 
   const stats = useMemo(() => {
@@ -104,11 +106,21 @@ export function ElevatorDashboard() {
       available: elevators.filter(e => e.status === "available").length,
       maintenance: elevators.filter(e => e.status === "maintenance").length,
       outOfOrder: elevators.filter(e => e.status === "out_of_order").length,
+      incidents: 0, // Placeholder until Incident feature is added
     }
   }, [elevators])
 
+  const calculateNextMaintenance = (startDate: string, cycle: Elevator['maintenanceCycle']) => {
+    const date = new Date(startDate)
+    const months = parseInt(cycle?.replace('m', '') || '1')
+    date.setMonth(date.getMonth() + months)
+    return date.toISOString().split('T')[0]
+  }
+
   const handleAddElevator = () => {
     if (!formData.name) return
+    const nextDate = calculateNextMaintenance(formData.startDate || new Date().toISOString().split('T')[0], formData.maintenanceCycle || "1m")
+    
     const newElevator: Elevator = {
       id: `E0${elevators.length + 1}`,
       name: formData.name,
@@ -116,8 +128,10 @@ export function ElevatorDashboard() {
       floorRange: formData.floorRange || "1-10",
       status: formData.status as ElevatorStatus,
       lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      maintenanceDate: formData.maintenanceDate || new Date().toISOString().split('T')[0],
+      maintenanceDate: nextDate,
       assignedUserId: formData.assignedUserId || null,
+      maintenanceCycle: formData.maintenanceCycle || "1m",
+      startDate: formData.startDate || new Date().toISOString().split('T')[0],
     }
     saveElevators([...elevators, newElevator])
     setIsAddDialogOpen(false)
@@ -126,11 +140,14 @@ export function ElevatorDashboard() {
 
   const handleUpdateElevator = () => {
     if (!editingElevator) return
+    const nextDate = calculateNextMaintenance(formData.lastMaintenanceDate || formData.startDate || editingElevator.startDate || new Date().toISOString().split('T')[0], formData.maintenanceCycle || "1m")
+    
     const updatedElevators = elevators.map(e => 
       e.id === editingElevator.id 
         ? { 
             ...editingElevator, 
             ...formData, 
+            maintenanceDate: nextDate,
             lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
           } as Elevator 
         : e
@@ -138,6 +155,24 @@ export function ElevatorDashboard() {
     saveElevators(updatedElevators)
     setEditingElevator(null)
     resetForm()
+  }
+
+  const handleCompleteMaintenance = (id: string) => {
+    const today = new Date().toISOString().split('T')[0]
+    const updatedElevators = elevators.map(e => {
+      if (e.id === id) {
+        const nextDate = calculateNextMaintenance(today, e.maintenanceCycle || "1m")
+        return {
+          ...e,
+          lastMaintenanceDate: today,
+          maintenanceDate: nextDate,
+          status: "available" as ElevatorStatus,
+          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      }
+      return e
+    })
+    saveElevators(updatedElevators)
   }
 
   const handleDeleteElevator = (id: string) => {
@@ -153,7 +188,9 @@ export function ElevatorDashboard() {
       floorRange: "", 
       status: "available",
       maintenanceDate: new Date().toISOString().split('T')[0],
-      assignedUserId: null
+      assignedUserId: null,
+      maintenanceCycle: "1m",
+      startDate: new Date().toISOString().split('T')[0],
     })
   }
 
@@ -166,6 +203,9 @@ export function ElevatorDashboard() {
       status: elevator.status,
       maintenanceDate: elevator.maintenanceDate,
       assignedUserId: elevator.assignedUserId,
+      maintenanceCycle: elevator.maintenanceCycle || "1m",
+      startDate: elevator.startDate || elevator.maintenanceDate,
+      lastMaintenanceDate: elevator.lastMaintenanceDate,
     })
   }
 
@@ -211,7 +251,7 @@ export function ElevatorDashboard() {
   const operators = mockUsers.filter(u => u.role === 'operator')
 
   const filteredElevators = useMemo(() => {
-    if (user?.role === 'admin' || user?.role === 'viewer') return elevators
+    if (user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'viewer') return elevators
     // Operators only see assigned elevators
     return elevators.filter(e => e.assignedUserId === user?.id)
   }, [elevators, user])
@@ -272,11 +312,11 @@ export function ElevatorDashboard() {
         </Card>
         <Card className="bg-gradient-to-br from-red-500/10 to-rose-500/5 border-red-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-700">{t('outOfOrder')}</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-700">{t('incidents')}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">{stats.outOfOrder}</div>
+            <div className="text-2xl font-bold text-red-700">{stats.incidents}</div>
             <p className="text-xs text-red-600/80">{t('requiresAttention')}</p>
           </CardContent>
         </Card>
@@ -288,7 +328,7 @@ export function ElevatorDashboard() {
             <CardTitle>{t('elevatorOverview')}</CardTitle>
             <CardDescription>{t('elevatorOverviewDesc')}</CardDescription>
           </div>
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -317,9 +357,26 @@ export function ElevatorDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{t('maintenanceDate')}</Label>
-                      <Input type="date" value={formData.maintenanceDate} onChange={e => setFormData({...formData, maintenanceDate: e.target.value})} />
+                      <Label>{t('startDate')}</Label>
+                      <Input type="date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
                     </div>
+                    <div className="space-y-2">
+                      <Label>{t('maintenanceCycle')}</Label>
+                      <Select value={formData.maintenanceCycle} onValueChange={v => setFormData({...formData, maintenanceCycle: v as any})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1m">{t('months_1')}</SelectItem>
+                          <SelectItem value="2m">{t('months_2')}</SelectItem>
+                          <SelectItem value="3m">{t('months_3')}</SelectItem>
+                          <SelectItem value="6m">{t('months_6')}</SelectItem>
+                          <SelectItem value="12m">{t('months_12')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t('status')}</Label>
                       <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as ElevatorStatus})}>
@@ -333,20 +390,20 @@ export function ElevatorDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t('assignOperator')}</Label>
-                    <Select value={formData.assignedUserId || "none"} onValueChange={v => setFormData({...formData, assignedUserId: v === "none" ? null : v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('unassigned')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">{t('unassigned')}</SelectItem>
-                        {operators.map(op => (
-                          <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label>{t('assignOperator')}</Label>
+                      <Select value={formData.assignedUserId || "none"} onValueChange={v => setFormData({...formData, assignedUserId: v === "none" ? null : v})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('unassigned')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t('unassigned')}</SelectItem>
+                          {operators.map(op => (
+                            <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -380,6 +437,11 @@ export function ElevatorDashboard() {
                     <div className="flex flex-col">
                       <span className="text-xs">{elevator.maintenanceDate}</span>
                       {getMaintenanceBadge(elevator.maintenanceDate)}
+                      {elevator.maintenanceCycle && (
+                        <span className="text-[10px] text-muted-foreground mt-1 uppercase italic">
+                          Cycle: {t(`months_${elevator.maintenanceCycle.replace('m','')}`)}
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -395,6 +457,16 @@ export function ElevatorDashboard() {
                   <TableCell className="text-muted-foreground">{elevator.lastUpdated}</TableCell>
                   {user?.role !== 'viewer' && (
                     <TableCell className="text-right space-x-2">
+                      {(user?.role === 'admin' || user?.role === 'super_admin' || user?.id === elevator.assignedUserId) && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleCompleteMaintenance(elevator.id)}
+                          title={t('updateCompletion')}
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        </Button>
+                      )}
                       <Dialog open={!!editingElevator && editingElevator.id === elevator.id} onOpenChange={(open) => !open && setEditingElevator(null)}>
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="icon" onClick={() => openEditDialog(elevator)}>
@@ -409,9 +481,26 @@ export function ElevatorDashboard() {
                           <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label>{t('maintenanceDate')}</Label>
-                                <Input type="date" value={formData.maintenanceDate} onChange={e => setFormData({...formData, maintenanceDate: e.target.value})} />
+                                <Label>{t('startDate')}</Label>
+                                <Input type="date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
                               </div>
+                              <div className="space-y-2">
+                                <Label>{t('maintenanceCycle')}</Label>
+                                <Select value={formData.maintenanceCycle} onValueChange={v => setFormData({...formData, maintenanceCycle: v as any})}>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1m">{t('months_1')}</SelectItem>
+                                    <SelectItem value="2m">{t('months_2')}</SelectItem>
+                                    <SelectItem value="3m">{t('months_3')}</SelectItem>
+                                    <SelectItem value="6m">{t('months_6')}</SelectItem>
+                                    <SelectItem value="12m">{t('months_12')}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>{t('status')}</Label>
                                 <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as ElevatorStatus})}>
@@ -425,8 +514,6 @@ export function ElevatorDashboard() {
                                   </SelectContent>
                                 </Select>
                               </div>
-                            </div>
-                            {user?.role === 'admin' && (
                               <div className="space-y-2">
                                 <Label>{t('assignedTo')}</Label>
                                 <Select value={formData.assignedUserId || "none"} onValueChange={v => setFormData({...formData, assignedUserId: v === "none" ? null : v})}>
@@ -441,14 +528,14 @@ export function ElevatorDashboard() {
                                   </SelectContent>
                                 </Select>
                               </div>
-                            )}
+                            </div>
                           </div>
                           <DialogFooter>
                             <Button onClick={handleUpdateElevator}>{t('save')}</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
-                      {user?.role === 'admin' && (
+                      {(user?.role === 'admin' || user?.role === 'super_admin') && (
                         <Button variant="ghost" size="icon" onClick={() => handleDeleteElevator(elevator.id)}>
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>

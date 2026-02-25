@@ -148,6 +148,7 @@ export function UserManagement() {
                 <Select value={formData.role} onValueChange={v => setFormData({...formData, role: v as any})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="super_admin">{t('super_admin')}</SelectItem>
                     <SelectItem value="admin">{t('admin')}</SelectItem>
                     <SelectItem value="operator">{t('operator')}</SelectItem>
                     <SelectItem value="viewer">{t('viewer')}</SelectItem>
@@ -196,6 +197,7 @@ export function UserManagement() {
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
                       {(() => {
+                        if (u.role === 'super_admin') return t('super_admin');
                         if (u.role === 'admin') return t('admin');
                         if (u.role === 'operator') return t('operator');
                         return t('viewer');
@@ -256,6 +258,7 @@ export function UserManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="super_admin">{t('super_admin')}</SelectItem>
                   <SelectItem value="admin">{t('admin')}</SelectItem>
                   <SelectItem value="operator">{t('operator')}</SelectItem>
                   <SelectItem value="viewer">{t('viewer')}</SelectItem>
