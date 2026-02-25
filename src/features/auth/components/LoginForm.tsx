@@ -1,21 +1,31 @@
 import { useState } from "react"
+import type { FormEvent } from "react"
 import { useAuth } from "../hooks/useAuth"
+import { useLanguage } from "@/i18n/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Smartphone, ShieldCheck, User as UserIcon, Building2 } from "lucide-react"
+import { Smartphone, Building2 } from "lucide-react"
 
 export function LoginForm() {
   const { login } = useAuth()
-  const [phone, setPhone] = useState("")
+  const { t } = useLanguage()
+  const [identifier, setIdentifier] = useState("")
+  const [password, setPassword] = useState("password")
+  const [error, setError] = useState("")
 
-  const handleMockLogin = (role: 'admin' | 'operator' | 'viewer') => {
-    if (!phone) {
-      alert("Please enter a phone number (mock)")
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setError("")
+    if (!identifier || !password) {
+      setError(t('loginError'))
       return
     }
-    login(phone, role)
+    const success = login(identifier, password)
+    if (!success) {
+      setError(t('loginError'))
+    }
   }
 
   return (
@@ -27,53 +37,55 @@ export function LoginForm() {
               <Building2 className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Elevator CMS Login</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">{t('appName')}</CardTitle>
           <CardDescription>
-            Enter your phone number to access the system.
+            {t('loginDesc')}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <div className="relative">
-              <Smartphone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-center font-medium">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="identifier">{t('identifierLabel')}</Label>
+              <div className="relative">
+                <Smartphone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="identifier"
+                  placeholder="admin@piscada.com"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('passwordLabel')}</Label>
               <Input
-                id="phone"
-                placeholder="09xx xxx xxx"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="pl-9"
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-          </div>
-          <div className="grid grid-cols-1 gap-3 pt-2">
-            <Button 
-              onClick={() => handleMockLogin('viewer')} 
-              variant="outline" 
-              className="justify-start h-12 hover:bg-slate-50"
-            >
-              <UserIcon className="mr-2 h-4 w-4 text-slate-500" />
-              Login as Building Occupant (Viewer)
+
+            <Button type="submit" className="w-full h-11 text-lg font-semibold mt-4">
+              {t('signInBtn')}
             </Button>
-            <Button 
-              onClick={() => handleMockLogin('operator')} 
-              variant="outline"
-              className="justify-start h-12 hover:bg-slate-50"
-            >
-              <Smartphone className="mr-2 h-4 w-4 text-blue-500" />
-              Login as Staff (Operator)
-            </Button>
-            <Button 
-              onClick={() => handleMockLogin('admin')} 
-              variant="outline"
-              className="justify-start h-12 hover:bg-slate-50"
-            >
-              <ShieldCheck className="mr-2 h-4 w-4 text-orange-500" />
-              Login as System Administrator (Admin)
-            </Button>
-          </div>
-        </CardContent>
+
+            <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100 italic">
+              <p className="text-[10px] uppercase text-muted-foreground font-bold mb-2 tracking-wider text-center">{t('mockAccounts')}</p>
+              <div className="grid grid-cols-3 gap-2 text-[10px] text-center">
+                <div className="p-1 border rounded bg-white">Admin: admin@piscada.com</div>
+                <div className="p-1 border rounded bg-white">Operator: 0987654321</div>
+                <div className="p-1 border rounded bg-white">Viewer: jane@piscada.com</div>
+              </div>
+            </div>
+          </CardContent>
+        </form>
         <CardFooter className="flex flex-col">
           <p className="text-xs text-center text-muted-foreground mt-2">
             © 2026 Piscada Elevator Management System

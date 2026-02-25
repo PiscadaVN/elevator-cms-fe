@@ -3,18 +3,54 @@ import type { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
-  login: (phone: string, role: User['role']) => void;
+  login: (identifier: string, password?: string) => boolean;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const MOCK_USERS: User[] = [
+  {
+    id: "U01",
+    name: "Admin User",
+    email: "admin@piscada.com",
+    phone: "0123456789",
+    password: "password",
+    role: "admin",
+    status: "active"
+  },
+  {
+    id: "U02",
+    name: "Operator John",
+    email: "john@piscada.com",
+    phone: "0987654321",
+    password: "password",
+    role: "operator",
+    status: "active"
+  },
+  {
+    id: "U03",
+    name: "Viewer Jane",
+    email: "jane@piscada.com",
+    phone: "0112233445",
+    password: "password",
+    role: "viewer",
+    status: "active"
+  }
+];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check if we have a custom user list in local storage (for User Management)
+    const storedUsers = localStorage.getItem('elevator_users_db');
+    if (!storedUsers) {
+      localStorage.setItem('elevator_users_db', JSON.stringify(MOCK_USERS));
+    }
+
     const savedUser = localStorage.getItem('elevator_user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -22,14 +58,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = (phone: string, role: User['role']) => {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: `User ${phone}`,
-      role: role
-    };
-    setUser(newUser);
-    localStorage.setItem('elevator_user', JSON.stringify(newUser));
+  const login = (identifier: string, password?: string) => {
+    const users: User[] = JSON.parse(localStorage.getItem('elevator_users_db') || '[]');
+    const foundUser = users.find(u => 
+      (u.email === identifier || u.phone === identifier) && 
+      u.status === 'active' &&
+      (!u.password || u.password === password)
+    );
+
+    if (foundUser) {
+      setUser(foundUser);
+      localStorage.setItem('elevator_user', JSON.stringify(foundUser));
+      return true;
+    }
+    return false;
   };
 
   const logout = () => {
