@@ -1,30 +1,76 @@
+import { useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { INITIAL_ELEVATORS } from '@/features/elevator/components/ElevatorDashboard'
 import { useLanguage } from '@/i18n/LanguageContext'
-import type { Contract, ContractStatus } from '@/types'
+import type { Contract, ContractStatus, Elevator, User } from '@/types'
 
 interface ViewContractDialogProps {
-	contract: Contract | null
-	onClose: () => void
-	getUserName: (id: string) => string
-	getElevatorName: (id: string) => string
-	formatCurrency: (amount: number) => string
-	formatDate: (dateStr: string) => string
-	serviceCycleLabel: (cycle: string) => string
-	onElevatorClick: () => void
+	contractId: string
 }
 
-export function ViewContractDialog({
-	contract,
-	onClose,
-	getUserName,
-	getElevatorName,
-	formatCurrency,
-	formatDate,
-	serviceCycleLabel,
-	onElevatorClick,
-}: ViewContractDialogProps) {
+export function ViewContractDialog({ contractId }: ViewContractDialogProps) {
+	const navigate = useNavigate()
+
 	const { t } = useLanguage()
+
+	const contracts = useMemo<Contract[]>(() => {
+		try {
+			const stored = localStorage.getItem('elevator_contracts_db')
+			return stored ? JSON.parse(stored) : []
+		} catch {
+			return []
+		}
+	}, [])
+
+	const allUsers = useMemo<User[]>(() => {
+		try {
+			return JSON.parse(localStorage.getItem('elevator_users_db') || '[]')
+		} catch {
+			return []
+		}
+	}, [])
+
+	const allElevators = useMemo<Elevator[]>(() => {
+		try {
+			const stored = localStorage.getItem('elevator_data')
+			return stored ? JSON.parse(stored) : INITIAL_ELEVATORS
+		} catch {
+			return INITIAL_ELEVATORS
+		}
+	}, [])
+
+	const contract = contracts.find((c) => c.id === contractId)
+
+	const getUserName = (userId: string) => {
+		return allUsers.find((u) => u.id === userId)?.name || userId
+	}
+
+	const getElevatorName = (elevatorId: string) => {
+		return allElevators.find((e) => e.id === elevatorId)?.name || elevatorId
+	}
+
+	const formatCurrency = (amount: number) => {
+		return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+	}
+
+	const formatDate = (dateStr: string) => {
+		if (!dateStr) return ''
+		return new Date(dateStr).toLocaleDateString('vi-VN')
+	}
+
+	const serviceCycleLabel = (cycle: string) => {
+		const map: Record<string, string> = {
+			'1m': `1 ${t('everyMonths')}`,
+			'2m': `2 ${t('everyMonths')}`,
+			'3m': `3 ${t('everyMonths')}`,
+			'6m': `6 ${t('everyMonths')}`,
+			'12m': `12 ${t('everyMonths')}`,
+		}
+		return map[cycle] || cycle
+	}
 
 	const statusBadge = (status: ContractStatus) => {
 		const variants: Record<ContractStatus, 'success' | 'warning' | 'destructive'> = {
@@ -41,7 +87,7 @@ export function ViewContractDialog({
 	}
 
 	return (
-		<Dialog open={!!contract} onOpenChange={(open) => !open && onClose()}>
+		<Dialog open={!!contractId} onOpenChange={(open) => !open && navigate({ to: '/contract' })}>
 			<DialogContent className="max-w-lg">
 				<DialogHeader>
 					<DialogTitle>
@@ -89,7 +135,7 @@ export function ViewContractDialog({
 										key={eid}
 										variant="outline"
 										className="cursor-pointer hover:bg-primary/10 transition-colors text-sm px-3 py-1"
-										onClick={onElevatorClick}
+										onClick={() => navigate({ to: `/elevator/${eid}` })}
 									>
 										{getElevatorName(eid)} →
 									</Badge>

@@ -12,7 +12,6 @@ import { useLanguage } from '@/i18n/LanguageContext'
 import type { Contract, ContractStatus, Elevator, User } from '@/types'
 import { AddContractDialog } from './AddContractDialog'
 import { EditContractDialog } from './EditContractDialog'
-import { ViewContractDialog } from './ViewContractDialog'
 
 function ContractList() {
 	const navigate = useNavigate()
@@ -50,7 +49,6 @@ function ContractList() {
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 	const [editingContract, setEditingContract] = useState<Contract | null>(null)
-	const [viewingContract, setViewingContract] = useState<Contract | null>(null)
 
 	const [formData, setFormData] = useState<Partial<Contract>>({
 		customerId: '',
@@ -261,7 +259,7 @@ function ContractList() {
 										<TableCell>{serviceCycleLabel(contract.serviceCycle)}</TableCell>
 										<TableCell>{statusBadge(contract.status)}</TableCell>
 										<TableCell className="text-right space-x-1">
-											<Button variant="ghost" size="icon" onClick={() => setViewingContract(contract)}>
+											<Button variant="ghost" size="icon" onClick={() => navigate({ to: `/contract/${contract.id}` })}>
 												<Eye className="w-4 h-4 text-primary" />
 											</Button>
 											{isAdmin && (
@@ -282,17 +280,6 @@ function ContractList() {
 					)}
 				</CardContent>
 			</Card>
-
-			<ViewContractDialog
-				contract={viewingContract}
-				onClose={() => setViewingContract(null)}
-				getUserName={getUserName}
-				getElevatorName={getElevatorName}
-				formatCurrency={formatCurrency}
-				formatDate={formatDate}
-				serviceCycleLabel={serviceCycleLabel}
-				onElevatorClick={navigateToElevator}
-			/>
 
 			<EditContractDialog
 				contract={editingContract}

@@ -1,7 +1,17 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 import ContractList from '@/features/contract/conponnets/ContractList'
 
 export const Route = createFileRoute('/_dashboard/contract')({
-	component: ContractList,
+	component: RouteComponent,
 })
+
+function RouteComponent() {
+	return (
+		<>
+			<ContractList />
+
+			<Outlet />
+		</>
+	)
+}

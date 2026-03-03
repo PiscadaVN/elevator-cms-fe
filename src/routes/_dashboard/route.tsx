@@ -34,9 +34,9 @@ function RouteComponent() {
 			<nav className="bg-white border-b px-8 py-2 flex items-center justify-between sticky top-0 z-10 shadow-sm">
 				<div className="flex items-center gap-4 flex-1 justify-center">
 					<Button
-						variant={currentTab === '/' ? 'default' : 'ghost'}
+						variant={currentTab === '/elevator' ? 'default' : 'ghost'}
 						size="sm"
-						onClick={() => handleNavigate('/')}
+						onClick={() => handleNavigate('/elevator')}
 						className="rounded-full"
 					>
 						<LayoutDashboard className="w-4 h-4 mr-2" /> {t('monitoring')}

@@ -21,6 +21,7 @@ import {
 	AlertTriangle,
 	CheckCircle2,
 	Edit,
+	Eye,
 	LogOut,
 	Plus,
 	Settings,
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { useNavigate } from '@tanstack/react-router'
 
 export const INITIAL_ELEVATORS: Elevator[] = [
 	{
@@ -74,8 +76,11 @@ export const INITIAL_ELEVATORS: Elevator[] = [
 ]
 
 export function ElevatorDashboard() {
+	const navigate = useNavigate()
+
 	const { user, logout } = useAuth()
 	const { t } = useLanguage()
+
 	const [elevators, setElevators] = useState<Elevator[]>(() => {
 		try {
 			const stored = localStorage.getItem('elevator_data')
@@ -568,6 +573,9 @@ export function ElevatorDashboard() {
 													<CheckCircle2 className="w-4 h-4 text-green-600" />
 												</Button>
 											)}
+											<Button variant="ghost" size="icon" onClick={() => navigate({ to: `/elevator/${elevator.id}` })}>
+												<Eye className="w-4 h-4 text-primary" />
+											</Button>
 											<Dialog
 												open={!!editingElevator && editingElevator.id === elevator.id}
 												onOpenChange={(open) => !open && setEditingElevator(null)}

@@ -41,6 +41,7 @@ export const translations: Translations = {
 		vi: 'Xác nhận xóa sự cố này?',
 		en: 'Confirm delete this incident?',
 	},
+	close: { vi: 'Đóng', en: 'Close' },
 
 	// Auth
 	loginTitle: { vi: 'Đăng nhập', en: 'Login' },
