@@ -32,6 +32,9 @@ function RouteComponent() {
 	return (
 		<div className="min-h-screen bg-slate-50/50 flex flex-col">
 			<nav className="bg-white border-b px-8 py-2 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+				<button className="flex items-center gap-2 shrink-0 cursor-pointer" onClick={() => handleNavigate('/')}>
+					<img src="/logo.svg" alt="Elevator CMS" className="h-8 w-auto" />
+				</button>
 				<div className="flex items-center gap-4 flex-1 justify-center">
 					<Button
 						variant={currentTab === '/elevator' ? 'default' : 'ghost'}
