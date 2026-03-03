@@ -145,6 +145,43 @@ export const translations: Translations = {
 		vi: '© 2026 Hệ thống Quản lý Thang máy Piscada',
 		en: '© 2026 Piscada Elevator Management System',
 	},
+
+	// Contracts
+	contracts: { vi: 'Hợp đồng', en: 'Contracts' },
+	contractManagementTitle: { vi: 'Quản lý Hợp đồng', en: 'Contract Management' },
+	contractManagementDesc: {
+		vi: 'Quản lý hợp đồng bảo trì thang máy, theo dõi trạng thái và thông tin chi tiết.',
+		en: 'Manage elevator maintenance contracts, track status and details.',
+	},
+	addContract: { vi: 'Thêm hợp đồng', en: 'Add Contract' },
+	contractList: { vi: 'Danh sách hợp đồng', en: 'Contract List' },
+	contractListDesc: {
+		vi: 'Tất cả hợp đồng hiện có trong hệ thống.',
+		en: 'All contracts currently in the system.',
+	},
+	customer: { vi: 'Khách hàng', en: 'Customer' },
+	signDate: { vi: 'Ngày ký', en: 'Sign Date' },
+	expiryDate: { vi: 'Ngày hết hạn', en: 'Expiry Date' },
+	amount: { vi: 'Số tiền', en: 'Amount' },
+	serviceCycle: { vi: 'Gói dịch vụ', en: 'Service Cycle' },
+	everyMonths: { vi: 'tháng/lần', en: 'months' },
+	contractStatus: { vi: 'Trạng thái HĐ', en: 'Contract Status' },
+	contractActive: { vi: 'Còn hiệu lực', en: 'Active' },
+	contractExpired: { vi: 'Hết hạn', en: 'Expired' },
+	contractCancelled: { vi: 'Đã hủy', en: 'Cancelled' },
+	linkedElevators: { vi: 'Thang máy liên kết', en: 'Linked Elevators' },
+	selectCustomer: { vi: 'Chọn khách hàng', en: 'Select Customer' },
+	selectElevator: { vi: 'Chọn thang máy', en: 'Select Elevator' },
+	noContractsFound: { vi: 'Không có hợp đồng nào.', en: 'No contracts found.' },
+	accessDenied: {
+		vi: 'Bạn không có quyền xem thông tin này.',
+		en: 'You do not have permission to view this information.',
+	},
+	viewElevator: { vi: 'Xem thang máy', en: 'View Elevator' },
+	note: { vi: 'Ghi chú', en: 'Note' },
+	contractId: { vi: 'Mã HĐ', en: 'Contract ID' },
+	myContracts: { vi: 'Hợp đồng của tôi', en: 'My Contracts' },
+	allContracts: { vi: 'Tất cả hợp đồng', en: 'All Contracts' },
 }
 
 interface LanguageContextType {

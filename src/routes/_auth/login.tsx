@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { useLanguage } from '@/i18n/LanguageContext'
 
-export const Route = createFileRoute('/(auth)/login')({
+export const Route = createFileRoute('/_auth/login')({
 	component: RouteComponent,
 })
 
@@ -17,7 +17,7 @@ function RouteComponent() {
 			<div className="absolute top-4 right-4 z-50">
 				<Button
 					variant="outline"
-					size="sm"
+					size='sm'
 					onClick={() => setLanguage(language === 'en' ? 'vi' : 'en')}
 					className="rounded-full bg-white shadow-sm"
 				>

@@ -41,3 +41,17 @@ export interface Incident {
 	updatedAt: string
 	reporterId: string
 }
+
+export type ContractStatus = 'active' | 'expired' | 'cancelled'
+
+export interface Contract {
+	id: string
+	customerId: string
+	elevatorIds: string[]
+	signDate: string
+	expiryDate: string
+	amount: number
+	serviceCycle: '1m' | '2m' | '3m' | '6m' | '12m'
+	status: ContractStatus
+	note?: string
+}

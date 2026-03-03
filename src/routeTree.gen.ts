@@ -13,7 +13,8 @@ import { Route as DashboardRouteRouteImport } from './routes/_dashboard/route'
 import { Route as DashboardIndexRouteImport } from './routes/_dashboard/index'
 import { Route as DashboardUserRouteImport } from './routes/_dashboard/user'
 import { Route as DashboardIncidentRouteImport } from './routes/_dashboard/incident'
-import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as DashboardContractRouteImport } from './routes/_dashboard/contract'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/_dashboard',
@@ -34,20 +35,27 @@ const DashboardIncidentRoute = DashboardIncidentRouteImport.update({
   path: '/incident',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const authLoginRoute = authLoginRouteImport.update({
-  id: '/(auth)/login',
+const DashboardContractRoute = DashboardContractRouteImport.update({
+  id: '/contract',
+  path: '/contract',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/_auth/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof DashboardIndexRoute
-  '/login': typeof authLoginRoute
+  '/login': typeof AuthLoginRoute
+  '/contract': typeof DashboardContractRoute
   '/incident': typeof DashboardIncidentRoute
   '/user': typeof DashboardUserRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof authLoginRoute
+  '/login': typeof AuthLoginRoute
+  '/contract': typeof DashboardContractRoute
   '/incident': typeof DashboardIncidentRoute
   '/user': typeof DashboardUserRoute
   '/': typeof DashboardIndexRoute
@@ -55,20 +63,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteRouteWithChildren
-  '/(auth)/login': typeof authLoginRoute
+  '/_auth/login': typeof AuthLoginRoute
+  '/_dashboard/contract': typeof DashboardContractRoute
   '/_dashboard/incident': typeof DashboardIncidentRoute
   '/_dashboard/user': typeof DashboardUserRoute
   '/_dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/incident' | '/user'
+  fullPaths: '/' | '/login' | '/contract' | '/incident' | '/user'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/incident' | '/user' | '/'
+  to: '/login' | '/contract' | '/incident' | '/user' | '/'
   id:
     | '__root__'
     | '/_dashboard'
-    | '/(auth)/login'
+    | '/_auth/login'
+    | '/_dashboard/contract'
     | '/_dashboard/incident'
     | '/_dashboard/user'
     | '/_dashboard/'
@@ -76,7 +86,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
-  authLoginRoute: typeof authLoginRoute
+  AuthLoginRoute: typeof AuthLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,23 +119,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIncidentRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/(auth)/login': {
-      id: '/(auth)/login'
+    '/_dashboard/contract': {
+      id: '/_dashboard/contract'
+      path: '/contract'
+      fullPath: '/contract'
+      preLoaderRoute: typeof DashboardContractRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof authLoginRouteImport
+      preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 interface DashboardRouteRouteChildren {
+  DashboardContractRoute: typeof DashboardContractRoute
   DashboardIncidentRoute: typeof DashboardIncidentRoute
   DashboardUserRoute: typeof DashboardUserRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardContractRoute: DashboardContractRoute,
   DashboardIncidentRoute: DashboardIncidentRoute,
   DashboardUserRoute: DashboardUserRoute,
   DashboardIndexRoute: DashboardIndexRoute,
@@ -137,7 +156,7 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
-  authLoginRoute: authLoginRoute,
+  AuthLoginRoute: AuthLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

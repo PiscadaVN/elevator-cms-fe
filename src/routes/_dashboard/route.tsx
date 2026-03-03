@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from '@ta
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Languages, LayoutDashboard, Users } from 'lucide-react'
+import { AlertCircle, Languages, LayoutDashboard, Newspaper, Users } from 'lucide-react'
 
 export const Route = createFileRoute('/_dashboard')({
 	beforeLoad: ({ context }) => {
@@ -59,6 +59,14 @@ function RouteComponent() {
 							<Users className="w-4 h-4 mr-2" /> {t('users')}
 						</Button>
 					)}
+					<Button
+						variant={currentTab === '/contract' ? 'default' : 'ghost'}
+						size="sm"
+						onClick={() => handleNavigate('/contract')}
+						className="rounded-full"
+					>
+						<Newspaper className="w-4 h-4 mr-2" /> {t('contracts')}
+					</Button>
 				</div>
 				<div className="flex items-center gap-2">
 					<Button
