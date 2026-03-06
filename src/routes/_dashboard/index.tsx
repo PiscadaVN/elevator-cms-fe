@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-
-import { ElevatorDashboard } from '@/features/elevator/components/ElevatorDashboard'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_dashboard/')({
-	component: ElevatorDashboard,
+	beforeLoad: () => {
+		throw redirect({ to: '/elevator' })
+	},
 })

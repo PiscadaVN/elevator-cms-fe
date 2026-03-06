@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -20,17 +20,19 @@ import {
 	Activity,
 	AlertTriangle,
 	CheckCircle2,
-	Settings,
+	Edit,
+	Eye,
 	LogOut,
 	Plus,
-	User as UserIcon,
+	Settings,
 	Trash2,
-	Edit,
+	User as UserIcon,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useLanguage } from '@/i18n/LanguageContext'
+import { useNavigate } from '@tanstack/react-router'
 
-const INITIAL_ELEVATORS: Elevator[] = [
+export const INITIAL_ELEVATORS: Elevator[] = [
 	{
 		id: 'E01',
 		name: 'Elevator 1',
@@ -74,8 +76,11 @@ const INITIAL_ELEVATORS: Elevator[] = [
 ]
 
 export function ElevatorDashboard() {
+	const navigate = useNavigate()
+
 	const { user, logout } = useAuth()
 	const { t } = useLanguage()
+
 	const [elevators, setElevators] = useState<Elevator[]>(() => {
 		try {
 			const stored = localStorage.getItem('elevator_data')
@@ -116,7 +121,7 @@ export function ElevatorDashboard() {
 
 	const calculateNextMaintenance = (startDate: string, cycle: Elevator['maintenanceCycle']) => {
 		const date = new Date(startDate)
-		const months = parseInt(cycle?.replace('m', '') || '1')
+		const months = Number.parseInt(cycle?.replace('m', '') || '1')
 		date.setMonth(date.getMonth() + months)
 		return date.toISOString().split('T')[0]
 	}
@@ -568,6 +573,9 @@ export function ElevatorDashboard() {
 													<CheckCircle2 className="w-4 h-4 text-green-600" />
 												</Button>
 											)}
+											<Button variant="ghost" size="icon" onClick={() => navigate({ to: `/elevator/${elevator.id}` })}>
+												<Eye className="w-4 h-4 text-primary" />
+											</Button>
 											<Dialog
 												open={!!editingElevator && editingElevator.id === elevator.id}
 												onOpenChange={(open) => !open && setEditingElevator(null)}

@@ -13,7 +13,11 @@ import { Route as DashboardRouteRouteImport } from './routes/_dashboard/route'
 import { Route as DashboardIndexRouteImport } from './routes/_dashboard/index'
 import { Route as DashboardUserRouteImport } from './routes/_dashboard/user'
 import { Route as DashboardIncidentRouteImport } from './routes/_dashboard/incident'
-import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as DashboardElevatorRouteImport } from './routes/_dashboard/elevator'
+import { Route as DashboardContractRouteImport } from './routes/_dashboard/contract'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as DashboardElevatorElevatorIdRouteImport } from './routes/_dashboard/elevator.$elevatorId'
+import { Route as DashboardContractContractIdRouteImport } from './routes/_dashboard/contract.$contractId'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/_dashboard',
@@ -34,49 +38,103 @@ const DashboardIncidentRoute = DashboardIncidentRouteImport.update({
   path: '/incident',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const authLoginRoute = authLoginRouteImport.update({
-  id: '/(auth)/login',
+const DashboardElevatorRoute = DashboardElevatorRouteImport.update({
+  id: '/elevator',
+  path: '/elevator',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardContractRoute = DashboardContractRouteImport.update({
+  id: '/contract',
+  path: '/contract',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/_auth/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardElevatorElevatorIdRoute =
+  DashboardElevatorElevatorIdRouteImport.update({
+    id: '/$elevatorId',
+    path: '/$elevatorId',
+    getParentRoute: () => DashboardElevatorRoute,
+  } as any)
+const DashboardContractContractIdRoute =
+  DashboardContractContractIdRouteImport.update({
+    id: '/$contractId',
+    path: '/$contractId',
+    getParentRoute: () => DashboardContractRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof DashboardIndexRoute
-  '/login': typeof authLoginRoute
+  '/login': typeof AuthLoginRoute
+  '/contract': typeof DashboardContractRouteWithChildren
+  '/elevator': typeof DashboardElevatorRouteWithChildren
   '/incident': typeof DashboardIncidentRoute
   '/user': typeof DashboardUserRoute
+  '/contract/$contractId': typeof DashboardContractContractIdRoute
+  '/elevator/$elevatorId': typeof DashboardElevatorElevatorIdRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof authLoginRoute
+  '/login': typeof AuthLoginRoute
+  '/contract': typeof DashboardContractRouteWithChildren
+  '/elevator': typeof DashboardElevatorRouteWithChildren
   '/incident': typeof DashboardIncidentRoute
   '/user': typeof DashboardUserRoute
   '/': typeof DashboardIndexRoute
+  '/contract/$contractId': typeof DashboardContractContractIdRoute
+  '/elevator/$elevatorId': typeof DashboardElevatorElevatorIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteRouteWithChildren
-  '/(auth)/login': typeof authLoginRoute
+  '/_auth/login': typeof AuthLoginRoute
+  '/_dashboard/contract': typeof DashboardContractRouteWithChildren
+  '/_dashboard/elevator': typeof DashboardElevatorRouteWithChildren
   '/_dashboard/incident': typeof DashboardIncidentRoute
   '/_dashboard/user': typeof DashboardUserRoute
   '/_dashboard/': typeof DashboardIndexRoute
+  '/_dashboard/contract/$contractId': typeof DashboardContractContractIdRoute
+  '/_dashboard/elevator/$elevatorId': typeof DashboardElevatorElevatorIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/incident' | '/user'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/contract'
+    | '/elevator'
+    | '/incident'
+    | '/user'
+    | '/contract/$contractId'
+    | '/elevator/$elevatorId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/incident' | '/user' | '/'
+  to:
+    | '/login'
+    | '/contract'
+    | '/elevator'
+    | '/incident'
+    | '/user'
+    | '/'
+    | '/contract/$contractId'
+    | '/elevator/$elevatorId'
   id:
     | '__root__'
     | '/_dashboard'
-    | '/(auth)/login'
+    | '/_auth/login'
+    | '/_dashboard/contract'
+    | '/_dashboard/elevator'
     | '/_dashboard/incident'
     | '/_dashboard/user'
     | '/_dashboard/'
+    | '/_dashboard/contract/$contractId'
+    | '/_dashboard/elevator/$elevatorId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
-  authLoginRoute: typeof authLoginRoute
+  AuthLoginRoute: typeof AuthLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,23 +167,77 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIncidentRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/(auth)/login': {
-      id: '/(auth)/login'
+    '/_dashboard/elevator': {
+      id: '/_dashboard/elevator'
+      path: '/elevator'
+      fullPath: '/elevator'
+      preLoaderRoute: typeof DashboardElevatorRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/_dashboard/contract': {
+      id: '/_dashboard/contract'
+      path: '/contract'
+      fullPath: '/contract'
+      preLoaderRoute: typeof DashboardContractRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof authLoginRouteImport
+      preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_dashboard/elevator/$elevatorId': {
+      id: '/_dashboard/elevator/$elevatorId'
+      path: '/$elevatorId'
+      fullPath: '/elevator/$elevatorId'
+      preLoaderRoute: typeof DashboardElevatorElevatorIdRouteImport
+      parentRoute: typeof DashboardElevatorRoute
+    }
+    '/_dashboard/contract/$contractId': {
+      id: '/_dashboard/contract/$contractId'
+      path: '/$contractId'
+      fullPath: '/contract/$contractId'
+      preLoaderRoute: typeof DashboardContractContractIdRouteImport
+      parentRoute: typeof DashboardContractRoute
     }
   }
 }
 
+interface DashboardContractRouteChildren {
+  DashboardContractContractIdRoute: typeof DashboardContractContractIdRoute
+}
+
+const DashboardContractRouteChildren: DashboardContractRouteChildren = {
+  DashboardContractContractIdRoute: DashboardContractContractIdRoute,
+}
+
+const DashboardContractRouteWithChildren =
+  DashboardContractRoute._addFileChildren(DashboardContractRouteChildren)
+
+interface DashboardElevatorRouteChildren {
+  DashboardElevatorElevatorIdRoute: typeof DashboardElevatorElevatorIdRoute
+}
+
+const DashboardElevatorRouteChildren: DashboardElevatorRouteChildren = {
+  DashboardElevatorElevatorIdRoute: DashboardElevatorElevatorIdRoute,
+}
+
+const DashboardElevatorRouteWithChildren =
+  DashboardElevatorRoute._addFileChildren(DashboardElevatorRouteChildren)
+
 interface DashboardRouteRouteChildren {
+  DashboardContractRoute: typeof DashboardContractRouteWithChildren
+  DashboardElevatorRoute: typeof DashboardElevatorRouteWithChildren
   DashboardIncidentRoute: typeof DashboardIncidentRoute
   DashboardUserRoute: typeof DashboardUserRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardContractRoute: DashboardContractRouteWithChildren,
+  DashboardElevatorRoute: DashboardElevatorRouteWithChildren,
   DashboardIncidentRoute: DashboardIncidentRoute,
   DashboardUserRoute: DashboardUserRoute,
   DashboardIndexRoute: DashboardIndexRoute,
@@ -137,7 +249,7 @@ const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
-  authLoginRoute: authLoginRoute,
+  AuthLoginRoute: AuthLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
