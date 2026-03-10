@@ -31,6 +31,9 @@ export const translations: Translations = {
 	resolved: { vi: 'Đã xử lý', en: 'Resolved' },
 	closed: { vi: 'Đóng', en: 'Closed' },
 	inProgress: { vi: 'Đang xử lý', en: 'In Progress' },
+	pendingApproval: { vi: 'Đợi duyệt', en: 'Pending Approval' },
+	completed: { vi: 'Hoàn thành', en: 'Completed' },
+	rejected: { vi: 'Từ chối', en: 'Rejected' },
 	new: { vi: 'Mới', en: 'New' },
 	high: { vi: 'Cao', en: 'High' },
 	medium: { vi: 'Trung bình', en: 'Medium' },
@@ -114,6 +117,7 @@ export const translations: Translations = {
 
 	// Maintenance Status
 	maintenanceDate: { vi: 'Ngày bảo trì', en: 'Maintenance Date' },
+	maintenanceStatus: { vi: 'Trạng thái bảo trì', en: 'Maintenance Status' },
 	overdue: { vi: 'Quá hạn', en: 'Overdue' },
 	dueSoon: { vi: 'Sắp đến hạn', en: 'Due Soon' },
 	normal: { vi: 'Bình thường', en: 'Normal' },
@@ -134,7 +138,7 @@ export const translations: Translations = {
 	email: { vi: 'Email', en: 'Email' },
 	phone: { vi: 'Số điện thoại', en: 'Phone' },
 	role: { vi: 'Vai trò', en: 'Role' },
-	super_admin: { vi: 'Quản trị viên cấp cao', en: 'Super Administrator' },
+	superadmin: { vi: 'Quản trị viên cấp cao', en: 'Super Administrator' },
 	admin: { vi: 'Quản trị viên', en: 'Administrator' },
 	operator: { vi: 'Nhân viên vận hành', en: 'Operator' },
 	viewer: { vi: 'Người xem', en: 'Viewer' },
@@ -183,6 +187,81 @@ export const translations: Translations = {
 	contractId: { vi: 'Mã HĐ', en: 'Contract ID' },
 	myContracts: { vi: 'Hợp đồng của tôi', en: 'My Contracts' },
 	allContracts: { vi: 'Tất cả hợp đồng', en: 'All Contracts' },
+
+	// Loading & Error Messages
+	loading: { vi: 'Đang tải...', en: 'Loading...' },
+	loadingIncidents: { vi: 'Đang tải sự cố...', en: 'Loading incidents...' },
+	loadingContracts: { vi: 'Đang tải hợp đồng...', en: 'Loading contracts...' },
+	loadingElevators: { vi: 'Đang tải thang máy...', en: 'Loading elevators...' },
+	creating: { vi: 'Đang tạo...', en: 'Creating...' },
+	saving: { vi: 'Đang lưu...', en: 'Saving...' },
+	deleting: { vi: 'Đang xóa...', en: 'Deleting...' },
+	updating: { vi: 'Đang cập nhật...', en: 'Updating...' },
+
+	// Error Messages
+	failedToCreate: { vi: 'Tạo không thành công', en: 'Failed to create' },
+	failedToUpdate: { vi: 'Cập nhật không thành công', en: 'Failed to update' },
+	failedToDelete: { vi: 'Xóa không thành công', en: 'Failed to delete' },
+	failedToCreateContract: { vi: 'Tạo hợp đồng không thành công', en: 'Failed to create contract' },
+	failedToUpdateContract: { vi: 'Cập nhật hợp đồng không thành công', en: 'Failed to update contract' },
+	failedToDeleteContract: { vi: 'Xóa hợp đồng không thành công', en: 'Failed to delete contract' },
+	failedToCreateIncident: {
+		vi: 'Tạo sự cố không thành công. Vui lòng thử lại.',
+		en: 'Failed to create incident. Please try again.',
+	},
+	failedToUpdateIncident: {
+		vi: 'Cập nhật sự cố không thành công. Vui lòng thử lại.',
+		en: 'Failed to update incident. Please try again.',
+	},
+	failedToDeleteIncident: {
+		vi: 'Xóa sự cố không thành công. Vui lòng thử lại.',
+		en: 'Failed to delete incident. Please try again.',
+	},
+	failedToUpdateStatus: {
+		vi: 'Cập nhật trạng thái không thành công. Vui lòng thử lại.',
+		en: 'Failed to update status. Please try again.',
+	},
+	invalidIncidentStatusTransition: {
+		vi: 'Không thể chuyển trạng thái theo quy tắc hiện tại hoặc bạn không có quyền.',
+		en: 'Status transition is not allowed by workflow or your permission.',
+	},
+	failedToCreateUser: { vi: 'Tạo người dùng không thành công', en: 'Failed to create user' },
+	failedToUpdateUser: { vi: 'Cập nhật người dùng không thành công', en: 'Failed to update user' },
+	failedToDeleteUser: { vi: 'Xóa người dùng không thành công', en: 'Failed to delete user' },
+	failedToCreateElevator: { vi: 'Tạo thang máy không thành công', en: 'Failed to create elevator' },
+	failedToUpdateElevator: { vi: 'Cập nhật thang máy không thành công', en: 'Failed to update elevator' },
+	failedToDeleteElevator: { vi: 'Xóa thang máy không thành công', en: 'Failed to delete elevator' },
+	noIncidentsFound: { vi: 'Không có sự cố nào.', en: 'No incidents found.' },
+	noUsersFound: { vi: 'Không có người dùng nào.', en: 'No users found.' },
+	noElevatorsFound: { vi: 'Không có thang máy nào.', en: 'No elevators found.' },
+	emailOrPhoneExists: { vi: 'Email hoặc Số điện thoại đã tồn tại.', en: 'Email or Phone number already exists.' },
+	failedToToggleUserStatus: {
+		vi: 'Thay đổi trạng thái người dùng không thành công. Vui lòng thử lại.',
+		en: 'Failed to toggle user status. Please try again.',
+	},
+	loadingUsers: { vi: 'Đang tải người dùng...', en: 'Loading users...' },
+	failedToLoadUsers: { vi: 'Không thể tải danh sách người dùng', en: 'Failed to load users' },
+	failedToCompleteMaintenance: {
+		vi: 'Hoàn thành bảo trì không thành công. Vui lòng thử lại.',
+		en: 'Failed to complete maintenance. Please try again.',
+	},
+	failedToLoadIncidents: { vi: 'Không thể tải danh sách sự cố', en: 'Failed to load incidents' },
+	selectElevatorPlaceholder: { vi: 'Chọn thang máy', en: 'Select Elevator' },
+	confirmDeleteElevator: {
+		vi: 'Bạn có chắc chắn muốn xóa thang máy này?',
+		en: 'Are you sure you want to delete this elevator?',
+	},
+	confirmDeleteIncident: {
+		vi: 'Bạn có chắc chắn muốn xóa sự cố này?',
+		en: 'Are you sure you want to delete this incident?',
+	},
+	createIncidentDesc: { vi: 'Tạo báo cáo sự cố mới.', en: 'Create a new incident report.' },
+	incidentListDesc: {
+		vi: 'Xem xét và quản lý các sự cố thang máy được báo cáo.',
+		en: 'Review and manage reported elevator issues.',
+	},
+	updateIncidentDesc: { vi: 'Cập nhật thông tin chi tiết sự cố.', en: 'Update incident details.' },
+	describeProblemPlaceholder: { vi: 'Mô tả vấn đề', en: 'Describe the problem' },
 }
 
 interface LanguageContextType {

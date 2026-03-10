@@ -47,7 +47,7 @@ export function AddContractDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogTrigger asChild>
-				<Button className="rounded-full shadow-lg hover:shadow-primary/20 transition-all">
+				<Button className="shadow-lg hover:shadow-primary/20 transition-all">
 					<Plus className="w-4 h-4 mr-2" /> {t('addContract')}
 				</Button>
 			</DialogTrigger>

@@ -58,7 +58,6 @@ export function ContractForm({
 						</SelectTrigger>
 						<SelectContent>
 							{allUsers
-								.filter((u) => u.status === 'active')
 								.map((u) => (
 									<SelectItem key={u.id} value={u.id}>
 										{u.name} ({u.email})

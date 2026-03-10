@@ -1,56 +1,74 @@
 import { useNavigate } from '@tanstack/react-router'
-import { Edit, Eye, FileText, Trash2 } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/features/auth/hooks/useAuth'
-import { INITIAL_ELEVATORS } from '@/features/elevator/components/ElevatorDashboard'
 import { useLanguage } from '@/i18n/LanguageContext'
-import type { Contract, ContractStatus, Elevator, User } from '@/types'
+import type { Contract, Elevator, User } from '@/types'
 import { AddContractDialog } from './AddContractDialog'
 import { EditContractDialog } from './EditContractDialog'
+import { ContractTable } from './ContractTable'
+import {
+	useContracts,
+	useCreateContract,
+	useDeleteContract,
+	useElevators,
+	useUpdateContract,
+	useUsers,
+} from '@/hooks/api'
+import {
+	mapApiContractToLocal,
+	mapLocalToApiCreate,
+	mapLocalToApiUpdate,
+	type LocalContract,
+} from '../helpers/contract-mappers'
+import { isAdmin as checkIsAdmin } from '@/lib/role-utils'
 
 function ContractList() {
 	const navigate = useNavigate()
-
 	const { t } = useLanguage()
 	const { user: currentUser } = useAuth()
 
-	const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin'
+	const isAdmin = checkIsAdmin(currentUser?.role)
 
-	const allUsers: User[] = useMemo(() => {
-		try {
-			return JSON.parse(localStorage.getItem('elevator_users_db') || '[]')
-		} catch {
-			return []
-		}
-	}, [])
+	const { data: apiContracts, isLoading: loadingContracts } = useContracts()
+	const { data: apiUsers, isLoading: loadingUsers } = useUsers()
+	const { data: apiElevators, isLoading: loadingElevators } = useElevators()
 
-	const allElevators: Elevator[] = useMemo(() => {
-		try {
-			const stored = localStorage.getItem('elevator_data')
-			return stored ? JSON.parse(stored) : INITIAL_ELEVATORS
-		} catch {
-			return INITIAL_ELEVATORS
-		}
-	}, [])
+	const createContractMutation = useCreateContract()
+	const updateContractMutation = useUpdateContract()
+	const deleteContractMutation = useDeleteContract()
 
-	const [contracts, setContracts] = useState<Contract[]>(() => {
-		try {
-			const stored = localStorage.getItem('elevator_contracts_db')
-			return stored ? JSON.parse(stored) : []
-		} catch {
-			return []
-		}
-	})
+	const contracts = useMemo(() => {
+		return apiContracts?.map(mapApiContractToLocal) || []
+	}, [apiContracts])
+
+	const allUsers = useMemo(() => {
+		return (
+			apiUsers?.map((user) => ({
+				id: user.id,
+				name: user.full_name,
+				email: user.email,
+				role: user.role,
+			})) || []
+		)
+	}, [apiUsers])
+
+	const allElevators = useMemo(() => {
+		return (
+			apiElevators?.map((elevator) => ({
+				id: elevator.id,
+				name: elevator.name || elevator.elevator_code,
+				code: elevator.elevator_code,
+				status: elevator.status,
+			})) || []
+		)
+	}, [apiElevators])
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-	const [editingContract, setEditingContract] = useState<Contract | null>(null)
+	const [editingContract, setEditingContract] = useState<LocalContract | null>(null)
 
-	const [formData, setFormData] = useState<Partial<Contract>>({
+	const [formData, setFormData] = useState<Partial<LocalContract>>({
 		customerId: '',
 		elevatorIds: [],
 		signDate: '',
@@ -62,11 +80,6 @@ function ContractList() {
 	})
 
 	const [selectedElevatorId, setSelectedElevatorId] = useState('')
-
-	const saveToDb = (newContracts: Contract[]) => {
-		setContracts(newContracts)
-		localStorage.setItem('elevator_contracts_db', JSON.stringify(newContracts))
-	}
 
 	const visibleContracts = useMemo(() => {
 		if (isAdmin) return contracts
@@ -82,38 +95,12 @@ function ContractList() {
 		return allElevators.find((e) => e.id === elevatorId)?.name || elevatorId
 	}
 
-	const formatCurrency = (amount: number) => {
-		return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+	const navigateToElevator = () => {
+		navigate({ to: '/' })
 	}
 
-	const formatDate = (dateStr: string) => {
-		if (!dateStr) return ''
-		return new Date(dateStr).toLocaleDateString('vi-VN')
-	}
-
-	const serviceCycleLabel = (cycle: string) => {
-		const map: Record<string, string> = {
-			'1m': `1 ${t('everyMonths')}`,
-			'2m': `2 ${t('everyMonths')}`,
-			'3m': `3 ${t('everyMonths')}`,
-			'6m': `6 ${t('everyMonths')}`,
-			'12m': `12 ${t('everyMonths')}`,
-		}
-		return map[cycle] || cycle
-	}
-
-	const statusBadge = (status: ContractStatus) => {
-		const variants: Record<ContractStatus, 'success' | 'warning' | 'destructive'> = {
-			active: 'success',
-			expired: 'warning',
-			cancelled: 'destructive',
-		}
-		const labels: Record<ContractStatus, string> = {
-			active: t('contractActive'),
-			expired: t('contractExpired'),
-			cancelled: t('contractCancelled'),
-		}
-		return <Badge variant={variants[status]}>{labels[status]}</Badge>
+	const handleViewContract = (contractId: string) => {
+		navigate({ to: `/contract/${contractId}` })
 	}
 
 	const resetForm = () => {
@@ -130,40 +117,47 @@ function ContractList() {
 		setSelectedElevatorId('')
 	}
 
-	const handleAddContract = () => {
+	const handleAddContract = async () => {
 		if (!formData.customerId || !formData.signDate || !formData.expiryDate || !formData.elevatorIds?.length) return
 
-		const newContract: Contract = {
-			id: `CT${String(contracts.length + 1).padStart(3, '0')}`,
-			customerId: formData.customerId!,
-			elevatorIds: formData.elevatorIds!,
-			signDate: formData.signDate!,
-			expiryDate: formData.expiryDate!,
-			amount: formData.amount || 0,
-			serviceCycle: (formData.serviceCycle as Contract['serviceCycle']) || '1m',
-			status: 'active',
-			note: formData.note || '',
+		try {
+			const apiData = mapLocalToApiCreate(formData)
+			await createContractMutation.mutateAsync(apiData)
+			setIsAddDialogOpen(false)
+			resetForm()
+		} catch (_error) {
+			alert(t('failedToCreateContract'))
 		}
-
-		saveToDb([...contracts, newContract])
-		setIsAddDialogOpen(false)
-		resetForm()
 	}
 
-	const handleUpdateContract = () => {
+	const handleUpdateContract = async () => {
 		if (!editingContract) return
-		const updated = contracts.map((c) => (c.id === editingContract.id ? ({ ...c, ...formData } as Contract) : c))
-		saveToDb(updated)
-		setEditingContract(null)
-		resetForm()
+
+		try {
+			const apiData = mapLocalToApiUpdate(formData)
+			await updateContractMutation.mutateAsync({
+				contractId: editingContract.id,
+				data: apiData,
+			})
+			setEditingContract(null)
+			resetForm()
+		} catch (_error) {
+			alert(t('failedToUpdateContract'))
+		}
 	}
 
-	const handleDeleteContract = (id: string) => {
+	const handleDeleteContract = async (id: string) => {
 		if (!confirm(t('confirmDelete'))) return
-		saveToDb(contracts.filter((c) => c.id !== id))
+
+		try {
+			await deleteContractMutation.mutateAsync(id)
+		} catch (_error) {
+			// Error handling
+			alert(t('failedToDeleteContract'))
+		}
 	}
 
-	const openEditDialog = (contract: Contract) => {
+	const openEditDialog = (contract: LocalContract) => {
 		setEditingContract(contract)
 		setFormData({
 			customerId: contract.customerId,
@@ -177,8 +171,15 @@ function ContractList() {
 		})
 	}
 
-	const navigateToElevator = () => {
-		navigate({ to: '/' })
+	if (loadingContracts || loadingUsers || loadingElevators) {
+		return (
+			<div className="p-8 flex items-center justify-center min-h-screen">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+					<p className="text-muted-foreground">{t('loadingContracts')}</p>
+				</div>
+			</div>
+		)
 	}
 
 	return (
@@ -196,12 +197,12 @@ function ContractList() {
 					<AddContractDialog
 						open={isAddDialogOpen}
 						onOpenChange={setIsAddDialogOpen}
-						formData={formData}
-						setFormData={setFormData}
+						formData={formData as Partial<Contract>}
+						setFormData={setFormData as (data: Partial<Contract>) => void}
 						selectedElevatorId={selectedElevatorId}
 						setSelectedElevatorId={setSelectedElevatorId}
-						allUsers={allUsers}
-						allElevators={allElevators}
+						allUsers={allUsers as User[]}
+						allElevators={allElevators as unknown as Elevator[]}
 						isAdmin={isAdmin}
 						getElevatorName={getElevatorName}
 						onSubmit={handleAddContract}
@@ -209,94 +210,36 @@ function ContractList() {
 				)}
 			</header>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>{isAdmin ? t('allContracts') : t('myContracts')}</CardTitle>
-					<CardDescription>{t('contractListDesc')}</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{visibleContracts.length === 0 ? (
-						<div className="text-center py-12 text-muted-foreground">{t('noContractsFound')}</div>
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t('contractId')}</TableHead>
-									<TableHead>{t('customer')}</TableHead>
-									<TableHead>{t('linkedElevators')}</TableHead>
-									<TableHead>{t('signDate')}</TableHead>
-									<TableHead>{t('expiryDate')}</TableHead>
-									<TableHead>{t('amount')}</TableHead>
-									<TableHead>{t('serviceCycle')}</TableHead>
-									<TableHead>{t('status')}</TableHead>
-									<TableHead className="text-right">{t('actions')}</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{visibleContracts.map((contract) => (
-									<TableRow key={contract.id}>
-										<TableCell className="font-mono font-bold">{contract.id}</TableCell>
-										<TableCell>
-											<div className="font-medium">{getUserName(contract.customerId)}</div>
-										</TableCell>
-										<TableCell>
-											<div className="flex flex-wrap gap-1">
-												{contract.elevatorIds.map((eid) => (
-													<Badge
-														key={eid}
-														variant="outline"
-														className="cursor-pointer hover:bg-primary/10 transition-colors"
-														onClick={navigateToElevator}
-													>
-														{getElevatorName(eid)}
-													</Badge>
-												))}
-											</div>
-										</TableCell>
-										<TableCell>{formatDate(contract.signDate)}</TableCell>
-										<TableCell>{formatDate(contract.expiryDate)}</TableCell>
-										<TableCell className="font-semibold">{formatCurrency(contract.amount)}</TableCell>
-										<TableCell>{serviceCycleLabel(contract.serviceCycle)}</TableCell>
-										<TableCell>{statusBadge(contract.status)}</TableCell>
-										<TableCell className="text-right space-x-1">
-											<Button variant="ghost" size="icon" onClick={() => navigate({ to: `/contract/${contract.id}` })}>
-												<Eye className="w-4 h-4 text-primary" />
-											</Button>
-											{isAdmin && (
-												<>
-													<Button variant="ghost" size="icon" onClick={() => openEditDialog(contract)}>
-														<Edit className="w-4 h-4 text-blue-600" />
-													</Button>
-													<Button variant="ghost" size="icon" onClick={() => handleDeleteContract(contract.id)}>
-														<Trash2 className="w-4 h-4 text-red-600" />
-													</Button>
-												</>
-											)}
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
-			</Card>
-
-			<EditContractDialog
-				contract={editingContract}
-				onClose={() => {
-					setEditingContract(null)
-					resetForm()
-				}}
-				formData={formData}
-				setFormData={setFormData}
-				selectedElevatorId={selectedElevatorId}
-				setSelectedElevatorId={setSelectedElevatorId}
-				allUsers={allUsers}
-				allElevators={allElevators}
+			<ContractTable
+				contracts={visibleContracts}
 				isAdmin={isAdmin}
+				getUserName={getUserName}
 				getElevatorName={getElevatorName}
-				onSubmit={handleUpdateContract}
+				onView={handleViewContract}
+				onEdit={openEditDialog}
+				onDelete={handleDeleteContract}
+				onElevatorClick={navigateToElevator}
+				isDeleting={deleteContractMutation.isPending}
 			/>
+
+			{editingContract && (
+				<EditContractDialog
+					contract={editingContract as Contract}
+					onClose={() => {
+						setEditingContract(null)
+						resetForm()
+					}}
+					formData={formData as Partial<Contract>}
+					setFormData={setFormData as (data: Partial<Contract>) => void}
+					selectedElevatorId={selectedElevatorId}
+					setSelectedElevatorId={setSelectedElevatorId}
+					allUsers={allUsers as User[]}
+					allElevators={allElevators as unknown as Elevator[]}
+					isAdmin={isAdmin}
+					getElevatorName={getElevatorName}
+					onSubmit={handleUpdateContract}
+				/>
+			)}
 		</div>
 	)
 }

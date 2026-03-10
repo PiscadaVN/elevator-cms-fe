@@ -13,26 +13,35 @@ import { useAuth } from '../hooks/useAuth'
 
 export function LoginForm() {
 	const navigate = useNavigate()
-
-	const { login } = useAuth()
 	const { t } = useLanguage()
 
-	const [identifier, setIdentifier] = useState('')
-	const [password, setPassword] = useState('password')
-	const [error, setError] = useState('')
+	const { login } = useAuth()
 
-	const handleSubmit = (e: FormEvent) => {
+	const [identifier, setIdentifier] = useState('admin@piscada.vn')
+	const [password, setPassword] = useState('admin')
+	const [error, setError] = useState('')
+	const [isLoading, setIsLoading] = useState(false)
+
+	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault()
 		setError('')
 		if (!identifier || !password) {
 			setError(t('loginError'))
 			return
 		}
-		const success = login(identifier, password)
-		if (success) {
-			navigate({ to: '/' })
-		} else {
+
+		setIsLoading(true)
+		try {
+			const success = await login(identifier, password)
+			if (success) {
+				navigate({ to: '/' })
+			} else {
+				setError(t('loginError'))
+			}
+		} catch (_err) {
 			setError(t('loginError'))
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
@@ -61,7 +70,7 @@ export function LoginForm() {
 								<Smartphone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
 								<Input
 									id="identifier"
-									placeholder="admin@piscada.com"
+									placeholder="admin@piscada.vn"
 									value={identifier}
 									onChange={(e) => setIdentifier(e.target.value)}
 									className="pl-9"
@@ -70,23 +79,18 @@ export function LoginForm() {
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="password">{t('passwordLabel')}</Label>
-							<Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+							<Input
+								id="password"
+								type="password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								disabled={isLoading}
+							/>
 						</div>
 
-						<Button type="submit" className="w-full h-11 text-lg font-semibold mt-4">
-							{t('signInBtn')}
+						<Button type="submit" className="w-full h-11 text-lg font-semibold mt-4" disabled={isLoading}>
+							{isLoading ? t('loading') || 'Loading...' : t('signInBtn')}
 						</Button>
-
-						<div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100 italic">
-							<p className="text-[10px] uppercase text-muted-foreground font-bold mb-2 tracking-wider text-center">
-								{t('mockAccounts')}
-							</p>
-							<div className="grid grid-cols-3 gap-2 text-[10px] text-center">
-								<div className="p-1 border rounded bg-white">{t('admin')}: admin@piscada.com</div>
-								<div className="p-1 border rounded bg-white">{t('operator')}: 0987654321</div>
-								<div className="p-1 border rounded bg-white">{t('viewer')}: jane@piscada.com</div>
-							</div>
-						</div>
 					</CardContent>
 				</form>
 				<CardFooter className="flex flex-col">

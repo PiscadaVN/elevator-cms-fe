@@ -3,7 +3,6 @@ import { useNavigate } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { INITIAL_ELEVATORS } from '@/features/elevator/components/ElevatorDashboard'
 import { useLanguage } from '@/i18n/LanguageContext'
 import type { Contract, ContractStatus, Elevator, User } from '@/types'
 
@@ -36,9 +35,9 @@ export function ViewContractDialog({ contractId }: ViewContractDialogProps) {
 	const allElevators = useMemo<Elevator[]>(() => {
 		try {
 			const stored = localStorage.getItem('elevator_data')
-			return stored ? JSON.parse(stored) : INITIAL_ELEVATORS
+			return stored ? JSON.parse(stored) : []
 		} catch {
-			return INITIAL_ELEVATORS
+			return []
 		}
 	}, [])
 
