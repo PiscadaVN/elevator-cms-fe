@@ -1,3 +1,5 @@
+import type { Role as ApiRole } from './api'
+
 export type ElevatorStatus = 'available' | 'maintenance' | 'out_of_order'
 
 export interface Elevator {
@@ -15,7 +17,7 @@ export interface Elevator {
 	lastMaintenanceDate?: string
 }
 
-export type UserRole = 'super_admin' | 'admin' | 'operator' | 'viewer'
+export type UserRole = ApiRole
 
 export interface User {
 	id: string
@@ -28,7 +30,7 @@ export interface User {
 }
 
 export type IncidentPriority = 'low' | 'medium' | 'high'
-export type IncidentStatus = 'new' | 'in_progress' | 'resolved' | 'closed'
+export type IncidentStatus = 'new' | 'in_progress' | 'pending_approval' | 'completed' | 'rejected'
 
 export interface Incident {
 	id: string

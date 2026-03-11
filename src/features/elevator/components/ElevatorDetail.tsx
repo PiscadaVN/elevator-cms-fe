@@ -13,8 +13,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { INITIAL_ELEVATORS } from '@/features/elevator/components/ElevatorDashboard'
-import type { Elevator, User } from '@/types'
+import type { Elevator } from '@/types'
+import { useElevator } from '@/hooks/api/useElevator'
+import { useUsers } from '@/hooks/api/useUser'
+
+import { mapApiStatusToLocal } from '../helper/utils'
 
 interface ElevatorDetailProps {
 	elevatorId: string
@@ -22,27 +25,28 @@ interface ElevatorDetailProps {
 
 export function ElevatorDetail({ elevatorId }: ElevatorDetailProps) {
 	const navigate = useNavigate()
-
 	const { t } = useLanguage()
 
-	const elevators = useMemo<Elevator[]>(() => {
-		try {
-			const stored = localStorage.getItem('elevator_data')
-			return stored ? JSON.parse(stored) : INITIAL_ELEVATORS
-		} catch {
-			return INITIAL_ELEVATORS
-		}
-	}, [])
+	const { data: apiElevator, isLoading: loadingElevator } = useElevator(elevatorId)
+	const { data: apiUsers } = useUsers()
 
-	const mockUsers = useMemo<User[]>(() => {
-		try {
-			return JSON.parse(localStorage.getItem('elevator_users_db') || '[]')
-		} catch {
-			return []
-		}
-	}, [])
+	const elevatorDetail = useMemo(() => {
+		if (!apiElevator) return null
 
-	const elevatorDetail = elevators.find((e) => e.id === elevatorId)
+		return {
+			id: apiElevator.id,
+			name: apiElevator.name || apiElevator.elevator_code,
+			building: apiElevator.address || 'N/A',
+			floorRange: `${apiElevator.min_floor || 1}-${apiElevator.max_floor || 20}`,
+			status: mapApiStatusToLocal(apiElevator.status),
+			lastUpdated: new Date().toLocaleTimeString(),
+			maintenanceDate: apiElevator.installation_at
+				? new Date(apiElevator.installation_at * 1000).toISOString().split('T')[0]
+				: new Date().toISOString().split('T')[0],
+			maintenanceCycle: '1m', // You can add this to API if needed
+			assignedUserId: null, // You can add this to API if needed
+		} as Elevator
+	}, [apiElevator])
 
 	const getStatusBadge = (status: Elevator['status']) => {
 		switch (status) {
@@ -90,71 +94,87 @@ export function ElevatorDetail({ elevatorId }: ElevatorDetailProps) {
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>
-						{t('elevator')}: {elevatorDetail?.id}
+						{t('elevator')}: {elevatorDetail?.name}
 					</DialogTitle>
 					<DialogDescription>{t('elevatorOverview')}</DialogDescription>
 				</DialogHeader>
-				<div className="grid gap-4 py-4">
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">ID</Label>
-							<p className="font-bold">{elevatorDetail?.id}</p>
-						</div>
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('building')}</Label>
-							<p>{elevatorDetail?.building}</p>
+
+				{loadingElevator ? (
+					<div className="grid gap-4 py-8">
+						<div className="flex flex-col items-center justify-center">
+							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+							<p className="text-sm text-muted-foreground">{t('loadingElevators')}</p>
 						</div>
 					</div>
-
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('floors')}</Label>
-							<p>{elevatorDetail?.floorRange}</p>
-						</div>
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('status')}</Label>
-							<div>{elevatorDetail ? getStatusBadge(elevatorDetail.status) : '-'}</div>
+				) : !elevatorDetail ? (
+					<div className="grid gap-4 py-8">
+						<div className="text-center">
+							<p className="text-sm text-muted-foreground">{t('elevatorNotFound')}</p>
 						</div>
 					</div>
-
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('maintenance')}</Label>
-							<div className="flex flex-col gap-1">
-								<span className="text-sm">{elevatorDetail?.maintenanceDate}</span>
-								{elevatorDetail?.maintenanceDate && getMaintenanceBadge(elevatorDetail.maintenanceDate)}
+				) : (
+					<div className="grid gap-4 py-4">
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('elevator')}</Label>
+								<p className="font-bold">{elevatorDetail?.name}</p>
+							</div>
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('building')}</Label>
+								<p>{elevatorDetail?.building}</p>
 							</div>
 						</div>
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('maintenanceCycle')}</Label>
-							<p>
-								{elevatorDetail?.maintenanceCycle
-									? t(`months_${elevatorDetail.maintenanceCycle.replace('m', '')}`)
-									: '-'}
-							</p>
-						</div>
-					</div>
 
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('assignedTo')}</Label>
-							<div>
-								{elevatorDetail?.assignedUserId ? (
-									<Badge variant="outline" className="text-[10px] bg-slate-50">
-										{mockUsers.find((u) => u.id === elevatorDetail.assignedUserId)?.name ||
-											elevatorDetail.assignedUserId}
-									</Badge>
-								) : (
-									<span className="text-sm text-muted-foreground italic">{t('unassigned')}</span>
-								)}
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('floors')}</Label>
+								<p>{elevatorDetail?.floorRange}</p>
+							</div>
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('status')}</Label>
+								<div>{elevatorDetail ? getStatusBadge(elevatorDetail.status) : '-'}</div>
 							</div>
 						</div>
-						<div className="space-y-1">
-							<Label className="text-muted-foreground text-xs">{t('lastUpdated')}</Label>
-							<p className="text-muted-foreground">{elevatorDetail?.lastUpdated}</p>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('maintenance')}</Label>
+								<div className="flex flex-col gap-1">
+									<span className="text-sm">{elevatorDetail?.maintenanceDate}</span>
+									{elevatorDetail?.maintenanceDate && getMaintenanceBadge(elevatorDetail.maintenanceDate)}
+								</div>
+							</div>
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('maintenanceCycle')}</Label>
+								<p>
+									{elevatorDetail?.maintenanceCycle
+										? t(`months_${elevatorDetail.maintenanceCycle.replace('m', '')}`)
+										: '-'}
+								</p>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('assignedTo')}</Label>
+								<div>
+									{elevatorDetail?.assignedUserId ? (
+										<Badge variant="outline" className="text-[10px] bg-slate-50">
+											{apiUsers?.find((u) => u.id === elevatorDetail.assignedUserId)?.full_name ||
+												elevatorDetail.assignedUserId}
+										</Badge>
+									) : (
+										<span className="text-sm text-muted-foreground italic">{t('unassigned')}</span>
+									)}
+								</div>
+							</div>
+							<div className="space-y-1">
+								<Label className="text-muted-foreground text-xs">{t('lastUpdated')}</Label>
+								<p className="text-muted-foreground">{elevatorDetail?.lastUpdated}</p>
+							</div>
 						</div>
 					</div>
-				</div>
+				)}
 				<DialogFooter>
 					<Button onClick={() => navigate({ to: '/elevator' })}>{t('close')}</Button>
 				</DialogFooter>

@@ -1,12 +1,17 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from '@tanstack/react-router'
-import { useAuth } from '@/features/auth/hooks/useAuth'
-import { useLanguage } from '@/i18n/LanguageContext'
-import { Button } from '@/components/ui/button'
 import { AlertCircle, Languages, LayoutDashboard, Newspaper, Users } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { useCurrentUser } from '@/hooks/api/useUser'
+import { useLanguage } from '@/i18n/LanguageContext'
+import { getAuthToken } from '@/lib/api-client'
+import { isAdmin as checkIsAdmin } from '@/lib/role-utils'
+
 export const Route = createFileRoute('/_dashboard')({
-	beforeLoad: ({ context }) => {
-		if (!context.user) {
+	beforeLoad: () => {
+		const token = getAuthToken()
+		if (!token) {
 			throw redirect({ to: '/login' })
 		}
 	},
@@ -18,12 +23,14 @@ function RouteComponent() {
 	const location = useLocation()
 	const currentTab = location.pathname
 
+	useCurrentUser()
+
 	const { user } = useAuth()
 	const { language, setLanguage, t } = useLanguage()
 
 	if (!user) return null
 
-	const isAdmin = user!.role === 'admin' || user!.role === 'super_admin'
+	const isAdmin = checkIsAdmin(user.role)
 
 	const handleNavigate = (path: string) => {
 		navigate({ to: path })

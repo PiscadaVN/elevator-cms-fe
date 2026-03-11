@@ -1,24 +1,26 @@
+import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { RouterProvider } from '@tanstack/react-router'
 
+import { useAuthStore } from '@/features/auth/store/auth.store'
 import { LanguageProvider } from '@/i18n/LanguageContext'
-import { AuthProvider, useAuth } from '@/features/auth/hooks/useAuth'
+import { QueryProvider } from '@/providers/QueryProvider'
 
 import './index.css'
 import { router } from './router'
 
 function InnerApp() {
-	const { user } = useAuth()
+	const { user } = useAuthStore()
+
 	return <RouterProvider router={router} context={{ user }} />
 }
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
-		<AuthProvider>
+		<QueryProvider>
 			<LanguageProvider>
 				<InnerApp />
 			</LanguageProvider>
-		</AuthProvider>
+		</QueryProvider>
 	</StrictMode>,
 )
