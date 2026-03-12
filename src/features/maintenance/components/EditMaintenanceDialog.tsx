@@ -10,9 +10,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MaintenanceStatusEnum } from '@/features/maintenance/helpers/status'
+import {
+	getMaintenanceStatusLabel,
+	getNextMaintenanceStatuses,
+	MaintenanceStatusEnum,
+} from '@/features/maintenance/helpers/status'
 import { useLanguage } from '@/i18n/LanguageContext'
-import type { Contract, Elevator, MaintenanceFormData, MaintenanceSchedule, User } from '@/types/api'
+import type { Elevator, MaintenanceFormData, MaintenanceSchedule, MaintenanceStatus } from '@/types/api'
+import { toDateInputValue } from '@/lib/date-utils'
 
 interface EditMaintenanceDialogProps {
 	schedule: MaintenanceSchedule | null
@@ -20,8 +25,6 @@ interface EditMaintenanceDialogProps {
 	formData: MaintenanceFormData
 	setFormData: (data: MaintenanceFormData) => void
 	elevators: Elevator[]
-	contracts: Contract[]
-	operators: User[]
 	onSubmit: () => void
 	isPending?: boolean
 }
@@ -32,12 +35,12 @@ export function EditMaintenanceDialog({
 	formData,
 	setFormData,
 	elevators,
-	contracts,
-	operators,
 	onSubmit,
 	isPending,
 }: EditMaintenanceDialogProps) {
 	const { t } = useLanguage()
+
+	const nextStatuses = getNextMaintenanceStatuses(schedule?.status ?? MaintenanceStatusEnum.SCHEDULED)
 
 	return (
 		<Dialog open={!!schedule} onOpenChange={(open) => !open && onClose()}>
@@ -69,77 +72,35 @@ export function EditMaintenanceDialog({
 					</div>
 
 					<div className="space-y-2">
-						<Label>{t('contract')}</Label>
-						<Select
-							value={formData.contractId}
-							onValueChange={(value) => setFormData({ ...formData, contractId: value })}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder={t('selectContractPlaceholder')} />
-							</SelectTrigger>
-							<SelectContent>
-								{contracts.map((contract) => (
-									<SelectItem key={contract.id} value={contract.id}>
-										{contract.id}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label>{t('scheduledStartAt')}</Label>
-							<Input
-								type="datetime-local"
-								value={formData.scheduledStartAt}
-								onChange={(event) => setFormData({ ...formData, scheduledStartAt: event.target.value })}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label>{t('scheduledEndAt')}</Label>
-							<Input
-								type="datetime-local"
-								value={formData.scheduledEndAt}
-								onChange={(event) => setFormData({ ...formData, scheduledEndAt: event.target.value })}
-							/>
-						</div>
-					</div>
-
-					<div className="space-y-2">
-						<Label>{t('assignedOperator')}</Label>
-						<Select
-							value={formData.assignedOperatorId || 'none'}
-							onValueChange={(value) => setFormData({ ...formData, assignedOperatorId: value === 'none' ? '' : value })}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder={t('selectOperatorPlaceholder')} />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none">{t('unassigned')}</SelectItem>
-								{operators.map((operator) => (
-									<SelectItem key={operator.id} value={operator.id}>
-										{operator.fullName}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<Label>{t('scheduledAt')}</Label>
+						<Input
+							type="date"
+							value={toDateInputValue(formData.scheduledStartAt)}
+							onChange={(e) =>
+								setFormData({
+									...formData,
+									scheduledStartAt: e.target.value ? new Date(e.target.value).getTime() / 1000 : undefined,
+								})
+							}
+						/>
 					</div>
 
 					<div className="space-y-2">
 						<Label>{t('status')}</Label>
 						<Select
 							value={formData.status}
-							onValueChange={(value) => setFormData({ ...formData, status: value as MaintenanceFormData['status'] })}
+							onValueChange={(value) => setFormData({ ...formData, status: value as MaintenanceStatus })}
+							disabled={nextStatuses.length === 1}
 						>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value={MaintenanceStatusEnum.SCHEDULED}>{t('scheduled')}</SelectItem>
-								<SelectItem value={MaintenanceStatusEnum.IN_PROGRESS}>{t('inProgress')}</SelectItem>
-								<SelectItem value={MaintenanceStatusEnum.COMPLETED}>{t('completed')}</SelectItem>
-								<SelectItem value={MaintenanceStatusEnum.CANCELLED}>{t('cancelled')}</SelectItem>
+								{nextStatuses.map((status) => (
+									<SelectItem key={status} value={status}>
+										{getMaintenanceStatusLabel(status, t)}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>

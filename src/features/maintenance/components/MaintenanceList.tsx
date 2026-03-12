@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import { useContracts } from '@/hooks/api/useContract'
 import { useElevators } from '@/hooks/api/useElevator'
 import {
 	useCreateMaintenanceSchedule,
@@ -8,17 +7,9 @@ import {
 	useMaintenanceSchedules,
 	useUpdateMaintenanceSchedule,
 } from '@/hooks/api/useMaintenance'
-import { useUsers } from '@/hooks/api/useUser'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { UserRoles } from '@/lib/role-utils'
-import type {
-	MaintenanceFormData,
-	MaintenanceSchedule,
-	MaintenanceScheduleCreate,
-	MaintenanceScheduleUpdate,
-} from '@/types/api'
+import type { MaintenanceFormData, MaintenanceSchedule } from '@/types/api'
 
-import { toDateTimeLocalValue, toUnixSeconds } from '../helpers/date'
 import { MaintenanceStatusEnum } from '../helpers/status'
 import { AddMaintenanceDialog } from './AddMaintenanceDialog'
 import { EditMaintenanceDialog } from './EditMaintenanceDialog'
@@ -26,60 +17,15 @@ import { MaintenanceTable } from './MaintenanceTable'
 
 const createDefaultFormData = (): MaintenanceFormData => ({
 	elevatorId: '',
-	contractId: '',
-	scheduledStartAt: '',
-	scheduledEndAt: '',
-	assignedOperatorId: '',
 	status: MaintenanceStatusEnum.SCHEDULED,
-	completedAt: '',
 	notes: '',
 })
-
-const mapFormToCreatePayload = (formData: MaintenanceFormData): MaintenanceScheduleCreate | null => {
-	const scheduledStartAt = toUnixSeconds(formData.scheduledStartAt)
-	const scheduledEndAt = toUnixSeconds(formData.scheduledEndAt)
-	const completedAt = toUnixSeconds(formData.completedAt)
-
-	if (!formData.elevatorId || !formData.contractId || !scheduledStartAt || !scheduledEndAt) {
-		return null
-	}
-
-	return {
-		elevatorId: formData.elevatorId,
-		contractId: formData.contractId,
-		scheduledStartAt,
-		scheduledEndAt,
-		assignedOperatorId: formData.assignedOperatorId || undefined,
-		status: formData.status,
-		completedAt,
-		notes: formData.notes || undefined,
-	}
-}
-
-const mapFormToUpdatePayload = (formData: MaintenanceFormData): MaintenanceScheduleUpdate => {
-	const scheduledStartAt = toUnixSeconds(formData.scheduledStartAt)
-	const scheduledEndAt = toUnixSeconds(formData.scheduledEndAt)
-	const completedAt = toUnixSeconds(formData.completedAt)
-
-	return {
-		elevatorId: formData.elevatorId || undefined,
-		contractId: formData.contractId || undefined,
-		scheduledStartAt,
-		scheduledEndAt,
-		assignedOperatorId: formData.assignedOperatorId || undefined,
-		status: formData.status,
-		completedAt,
-		notes: formData.notes || undefined,
-	}
-}
 
 export function MaintenanceList() {
 	const { t } = useLanguage()
 
 	const { data: schedules = [], isLoading } = useMaintenanceSchedules()
 	const { data: elevators = [] } = useElevators()
-	const { data: contracts = [] } = useContracts()
-	const { data: users = [] } = useUsers()
 
 	const createMutation = useCreateMaintenanceSchedule()
 	const updateMutation = useUpdateMaintenanceSchedule()
@@ -89,21 +35,18 @@ export function MaintenanceList() {
 	const [editingSchedule, setEditingSchedule] = useState<MaintenanceSchedule | null>(null)
 	const [formData, setFormData] = useState<MaintenanceFormData>(createDefaultFormData())
 
-	const operators = users.filter((user) => user.role === UserRoles.OPERATOR)
-
 	const resetForm = () => {
 		setFormData(createDefaultFormData())
 	}
 
 	const handleAddMaintenance = async () => {
-		const payload = mapFormToCreatePayload(formData)
-		if (!payload) {
+		if (!formData.elevatorId) {
 			alert(t('missingRequiredFields'))
 			return
 		}
 
 		try {
-			await createMutation.mutateAsync(payload)
+			await createMutation.mutateAsync(formData)
 			setIsAddDialogOpen(false)
 			resetForm()
 		} catch (_error) {
@@ -115,8 +58,7 @@ export function MaintenanceList() {
 		if (!editingSchedule) return
 
 		try {
-			const payload = mapFormToUpdatePayload(formData)
-			await updateMutation.mutateAsync({ scheduleId: editingSchedule.id, data: payload })
+			await updateMutation.mutateAsync({ scheduleId: editingSchedule.id, data: formData })
 			setEditingSchedule(null)
 			resetForm()
 		} catch (_error) {
@@ -138,12 +80,9 @@ export function MaintenanceList() {
 		setEditingSchedule(schedule)
 		setFormData({
 			elevatorId: schedule.elevatorId,
-			contractId: schedule.contractId,
-			scheduledStartAt: toDateTimeLocalValue(schedule.scheduledStartAt),
-			scheduledEndAt: toDateTimeLocalValue(schedule.scheduledEndAt),
-			assignedOperatorId: schedule.assignedOperatorId || '',
+			scheduledStartAt: schedule.scheduledStartAt,
 			status: schedule.status,
-			completedAt: toDateTimeLocalValue(schedule.completedAt),
+			completedAt: schedule.completedAt,
 			notes: schedule.notes || '',
 		})
 	}
@@ -161,8 +100,6 @@ export function MaintenanceList() {
 					formData={formData}
 					setFormData={setFormData}
 					elevators={elevators}
-					contracts={contracts}
-					operators={operators}
 					onSubmit={handleAddMaintenance}
 					isPending={createMutation.isPending}
 				/>
@@ -184,8 +121,6 @@ export function MaintenanceList() {
 				formData={formData}
 				setFormData={setFormData}
 				elevators={elevators}
-				contracts={contracts}
-				operators={operators}
 				onSubmit={handleUpdateMaintenance}
 				isPending={updateMutation.isPending}
 			/>

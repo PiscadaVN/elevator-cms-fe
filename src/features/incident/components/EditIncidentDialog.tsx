@@ -12,7 +12,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
 	getNextIncidentStatuses,
+	getPriorityLabel,
 	getStatusLabel,
+	IncidentPriorityEnum,
 	IncidentStatusEnum,
 } from '@/features/incident/helpers/status-transition'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -37,10 +39,7 @@ export function EditIncidentDialog({
 }: EditIncidentDialogProps) {
 	const { t } = useLanguage()
 
-	const baseStatus = incident?.status ?? IncidentStatusEnum.NEW
-	const allowedStatuses = [baseStatus, ...getNextIncidentStatuses(baseStatus)].filter(
-		(status, index, arr) => arr.indexOf(status) === index,
-	)
+	const nextStatuses = getNextIncidentStatuses(incident?.status ?? IncidentStatusEnum.NEW)
 
 	return (
 		<Dialog open={!!incident} onOpenChange={(open) => !open && onClose()}>
@@ -61,25 +60,36 @@ export function EditIncidentDialog({
 					</div>
 					<div className="space-y-2">
 						<Label>{t('priority')}</Label>
-						<Input
-							type="number"
-							value={formData.priority ?? ''}
-							onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })}
-						/>
+						<Select
+							value={formData.priority.toString()}
+							onValueChange={(v) => setFormData({ ...formData, priority: Number(v) })}
+						>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{Object.values(IncidentPriorityEnum).map((priority) => (
+									<SelectItem key={priority} value={priority.toString()}>
+										{getPriorityLabel(priority, t)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 					<div className="space-y-2">
 						<Label>{t('status')}</Label>
 						<Select
 							value={formData.status}
 							onValueChange={(v) => setFormData({ ...formData, status: v as IncidentStatus })}
+							disabled={nextStatuses.length === 1}
 						>
-							<SelectTrigger disabled={allowedStatuses.length <= 1}>
+							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								{allowedStatuses.map((status) => (
+								{nextStatuses.map((status) => (
 									<SelectItem key={status} value={status}>
-										{getStatusLabel(status as IncidentStatus, t)}
+										{getStatusLabel(status, t)}
 									</SelectItem>
 								))}
 							</SelectContent>

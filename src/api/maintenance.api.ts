@@ -1,12 +1,12 @@
 import { apiDelete, apiGet, apiPost, apiPut } from '@/lib/api-client'
-import type { MaintenanceSchedule, MaintenanceScheduleCreate, MaintenanceScheduleUpdate } from '@/types/api'
+import type { MaintenanceFormData, MaintenanceSchedule } from '@/types/api'
 
 export const maintenanceApi = {
 	getMaintenanceSchedules: async (): Promise<MaintenanceSchedule[]> => {
 		return apiGet<MaintenanceSchedule[]>('maintenance-schedules')
 	},
 
-	createMaintenanceSchedule: async (data: MaintenanceScheduleCreate): Promise<MaintenanceSchedule> => {
+	createMaintenanceSchedule: async (data: MaintenanceFormData): Promise<MaintenanceSchedule> => {
 		return apiPost<MaintenanceSchedule>('maintenance-schedules', data)
 	},
 
@@ -14,10 +14,7 @@ export const maintenanceApi = {
 		return apiGet<MaintenanceSchedule>(`maintenance-schedules/${scheduleId}`)
 	},
 
-	updateMaintenanceSchedule: async (
-		scheduleId: string,
-		data: MaintenanceScheduleUpdate,
-	): Promise<MaintenanceSchedule> => {
+	updateMaintenanceSchedule: async (scheduleId: string, data: MaintenanceFormData): Promise<MaintenanceSchedule> => {
 		return apiPut<MaintenanceSchedule>(`maintenance-schedules/${scheduleId}`, data)
 	},
 

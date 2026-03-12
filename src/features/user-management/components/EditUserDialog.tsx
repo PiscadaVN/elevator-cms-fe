@@ -26,8 +26,8 @@ interface EditUserDialogProps {
 export function EditUserDialog({ user, onClose, formData, setFormData, onSubmit, isPending }: EditUserDialogProps) {
 	const { t } = useLanguage()
 
-	const showPhoneField = formData.role === UserRoles.USER
-	const showEmailField = formData.role !== UserRoles.USER
+	const showPhoneField = formData.role !== UserRoles.ADMIN
+	const showEmailField = formData.role === UserRoles.ADMIN
 	const showOldContractHistoryPermission = formData.role === UserRoles.USER
 
 	return (
@@ -48,6 +48,7 @@ export function EditUserDialog({ user, onClose, formData, setFormData, onSubmit,
 						<Label>{t('role')}</Label>
 						<Select
 							value={formData.role}
+							disabled
 							onValueChange={(role) => {
 								if (!role) {
 									return

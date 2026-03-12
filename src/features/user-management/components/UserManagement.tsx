@@ -1,6 +1,7 @@
 import { Users } from 'lucide-react'
 import { useState } from 'react'
 
+import { CommonConfirmDialog } from '@/components/ui/common-confirm-dialog'
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/api/useUser'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { UserRoles } from '@/lib/role-utils'
@@ -20,6 +21,7 @@ export function UserManagement() {
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 	const [editingUser, setEditingUser] = useState<User | null>(null)
+	const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
 	const [formData, setFormData] = useState<Partial<User>>({
 		fullName: '',
@@ -87,11 +89,16 @@ export function UserManagement() {
 		}
 	}
 
-	const handleToggleStatus = async (id: string) => {
-		if (!confirm(t('confirmDeleteUser'))) return
+	const handleToggleStatus = (id: string) => {
+		setDeletingUserId(id)
+	}
+
+	const handleConfirmToggleStatus = async () => {
+		if (!deletingUserId) return
 
 		try {
-			await deleteMutation.mutateAsync(id)
+			await deleteMutation.mutateAsync(deletingUserId)
+			setDeletingUserId(null)
 		} catch (_error) {
 			alert(t('failedToToggleUserStatus'))
 		}
@@ -154,6 +161,19 @@ export function UserManagement() {
 				setFormData={setFormData}
 				onSubmit={handleUpdateUser}
 				isPending={updateMutation.isPending}
+			/>
+
+			<CommonConfirmDialog
+				open={!!deletingUserId}
+				onOpenChange={(open) => {
+					if (!open) setDeletingUserId(null)
+				}}
+				title={t('delete')}
+				content={t('confirmDeleteUser')}
+				cancelText={t('cancel')}
+				submitText={deleteMutation.isPending ? t('deleting') : t('delete')}
+				onSubmit={handleConfirmToggleStatus}
+				isPending={deleteMutation.isPending}
 			/>
 		</div>
 	)

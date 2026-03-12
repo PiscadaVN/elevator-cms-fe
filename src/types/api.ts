@@ -11,6 +11,7 @@ export interface TokenResponse {
 	accessToken: string
 	refreshToken: string
 	tokenType: string
+	role: UserRole
 }
 
 export interface RefreshTokenRequest {
@@ -62,7 +63,7 @@ export interface User {
 	deletedAt?: number | null
 }
 
-export type ElevatorStatus = 'normal' | 'broken'
+export type ElevatorStatus = 'active' | 'out_of_order'
 
 export interface ElevatorCreate {
 	id?: string | null
@@ -188,6 +189,7 @@ export interface Contract {
 	contractValue?: number | null
 	description?: string | null
 	status: ContractStatus
+	priority?: number
 	note?: string | null
 	isActive: boolean
 	createdAt?: number
@@ -201,11 +203,12 @@ export interface ContractFormData {
 	expiredAt?: number
 	contractValue?: number | string | null
 	status: ContractStatus
+	priority?: number
 	note?: string
 	description?: string
 }
 
-export type IncidentStatus = 'new' | 'in_progress' | 'pending_approval' | 'completed' | 'rejected'
+export type IncidentStatus = 'new' | 'in_progress' | 'in_review' | 'close' | 'reopen'
 
 export interface IncidentCreate {
 	id?: string | null
@@ -257,7 +260,7 @@ export interface Incident {
 	reportedUserId: number
 	status: IncidentStatus
 	title: string
-	updatedAt: string
+	updatedAt: number
 }
 
 export interface IncidentFormData {
@@ -267,12 +270,19 @@ export interface IncidentFormData {
 	status: IncidentStatus
 }
 
-export type MaintenanceStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+export type MaintenanceStatus =
+	| 'scheduled'
+	| 'upcoming'
+	| 'overdue'
+	| 'in_progress'
+	| 'under_review'
+	| 'completed'
+	| 'failed'
 
 export interface MaintenanceScheduleCreate {
 	id?: string | null
 	elevatorId: string
-	contractId: string
+	contractId?: string | null
 	scheduledStartAt: number
 	scheduledEndAt: number
 	assignedOperatorId?: string | null
@@ -309,29 +319,26 @@ export interface ContractBasic {
 export interface MaintenanceSchedule {
 	id: string
 	elevatorId: string
-	contractId: string
+	contractId?: string
 	scheduledStartAt: number
 	scheduledEndAt: number
-	assignedOperatorId?: string | null
+	assignedOperatorId?: string
 	status: MaintenanceStatus
-	completedAt?: number | null
-	notes?: string | null
-	createdAt?: number | null
-	updatedAt?: number | null
-	elevator?: Elevator | null
-	contract?: ContractBasic | null
-	assignedOperator?: User | null
+	completedAt?: number
+	notes?: string
+	createdAt?: number
+	updatedAt?: number
+	elevator?: Elevator
+	contract?: ContractBasic
+	assignedOperator?: User
 }
 
 export interface MaintenanceFormData {
 	elevatorId: string
-	contractId: string
-	scheduledStartAt: string
-	scheduledEndAt: string
-	assignedOperatorId: string
+	scheduledStartAt?: number
 	status: MaintenanceStatus
-	completedAt: string
-	notes: string
+	completedAt?: number
+	notes?: string
 }
 
 export type EntityType = 'CONTRACT' | 'INCIDENT'

@@ -8,6 +8,7 @@ import {
 	setRefreshToken,
 } from '@/lib/api-client'
 import type { LoginRequest, PasswordChangeRequest, RefreshTokenRequest, TokenResponse } from '@/types/api'
+import { UserRoles } from '@/lib/role-utils'
 
 export const authApi = {
 	login: async (data: LoginRequest): Promise<TokenResponse> => {
@@ -19,6 +20,10 @@ export const authApi = {
 			},
 			false,
 		)
+
+		if (response.role !== UserRoles.ADMIN) {
+			throw new Error('Login failed')
+		}
 
 		setAuthToken(response.accessToken)
 		setRefreshToken(response.refreshToken)

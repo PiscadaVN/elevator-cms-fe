@@ -5,25 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/i18n/LanguageContext'
-import { formatDisplayDate } from '@/lib/date-utils'
 import type { Elevator } from '@/types/api'
-
-const getStatusBadge = (status: string, t: (key: string) => string) => {
-	switch (status) {
-		case 'broken':
-			return (
-				<Badge variant="destructive" className="ml-2">
-					{t('outOfOrder')}
-				</Badge>
-			)
-		default:
-			return (
-				<Badge variant="outline" className="ml-2 text-green-600 border-green-200">
-					{t('normal')}
-				</Badge>
-			)
-	}
-}
+import { getElevatorStatus, getElevatorStatusVariant } from '@/features/elevator/helpers/status-transition'
 
 interface ElevatorTableProps {
 	elevators: Elevator[]
@@ -52,11 +35,15 @@ export function ElevatorTable({ elevators, isLoading, onEdit, onView, onDelete, 
 						<TableHeader>
 							<TableRow>
 								<TableHead className="text-left">{t('elevatorCode')}</TableHead>
+
 								<TableHead className="text-left">{t('building')}</TableHead>
+
 								<TableHead className="text-center">{t('floors')}</TableHead>
+
 								<TableHead className="text-center">{t('operators')}</TableHead>
+
 								<TableHead className="text-center">{t('status')}</TableHead>
-								<TableHead className="text-right">{t('lastUpdated')}</TableHead>
+
 								<TableHead className="text-right">{t('actions')}</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -65,10 +52,13 @@ export function ElevatorTable({ elevators, isLoading, onEdit, onView, onDelete, 
 							{elevators.map((elevator) => (
 								<TableRow key={elevator.id}>
 									<TableCell className="font-bold text-left">{elevator.code}</TableCell>
+
 									<TableCell className="text-left">{elevator.address}</TableCell>
+
 									<TableCell className="text-center">
 										{elevator.minFloor} - {elevator.maxFloor}
 									</TableCell>
+
 									<TableCell className="text-center">
 										{elevator.operators?.map((op) => (
 											<Badge key={op.id} variant="outline" className="mx-1">
@@ -76,18 +66,20 @@ export function ElevatorTable({ elevators, isLoading, onEdit, onView, onDelete, 
 											</Badge>
 										)) || '-'}
 									</TableCell>
-									<TableCell className="text-center">{getStatusBadge(elevator.status, t)}</TableCell>
-									<TableCell className="text-muted-foreground text-right">
-										{formatDisplayDate(elevator.updatedAt)}
+
+									<TableCell className="text-center">
+										<Badge variant={getElevatorStatusVariant(elevator.status)} className="ml-2">
+											{getElevatorStatus(elevator.status, t)}
+										</Badge>
 									</TableCell>
 
 									<TableCell className="text-right space-x-2">
-										<Button variant="ghost" size="icon" onClick={() => onEdit(elevator)}>
-											<Edit className="w-4 h-4 text-blue-600" />
-										</Button>
-
 										<Button variant="ghost" size="icon" onClick={() => onView(elevator.id)}>
 											<Eye className="w-4 h-4 text-primary" />
+										</Button>
+
+										<Button variant="ghost" size="icon" onClick={() => onEdit(elevator)}>
+											<Edit className="w-4 h-4 text-blue-600" />
 										</Button>
 
 										<Button variant="ghost" size="icon" onClick={() => onDelete(elevator.id)} disabled={isDeleting}>

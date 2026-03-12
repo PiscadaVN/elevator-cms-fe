@@ -45,8 +45,8 @@ export function EditElevatorDialog({ isOpen, elevator, onClose }: EditElevatorDi
 	const [formData, setFormData] = useState<Partial<Elevator>>({
 		code: elevator.code,
 		address: elevator.address ?? '',
-		minFloor: elevator.minFloor ?? 0,
-		maxFloor: elevator.maxFloor ?? 0,
+		minFloor: elevator.minFloor ?? 1,
+		maxFloor: elevator.maxFloor ?? 2,
 		status: elevator.status,
 		operatorIds: elevator.operators?.map((operator) => operator.id) ?? [],
 	})
@@ -55,9 +55,9 @@ export function EditElevatorDialog({ isOpen, elevator, onClose }: EditElevatorDi
 		setFormData({
 			code: '',
 			address: '',
-			minFloor: 0,
-			maxFloor: 0,
-			status: 'normal',
+			minFloor: 1,
+			maxFloor: 2,
+			status: 'active',
 			operatorIds: [],
 		})
 	}, [])
@@ -110,7 +110,8 @@ export function EditElevatorDialog({ isOpen, elevator, onClose }: EditElevatorDi
 							<Label>{t('minFloor')}</Label>
 							<Input
 								type="number"
-								value={formData.minFloor ?? 0}
+								min={1}
+								value={formData.minFloor ?? 1}
 								onChange={(e) => setFormData({ ...formData, minFloor: Number(e.target.value) })}
 							/>
 						</div>
@@ -118,7 +119,8 @@ export function EditElevatorDialog({ isOpen, elevator, onClose }: EditElevatorDi
 							<Label>{t('maxFloor')}</Label>
 							<Input
 								type="number"
-								value={formData.maxFloor ?? 0}
+								min={2}
+								value={formData.maxFloor ?? 2}
 								onChange={(e) => setFormData({ ...formData, maxFloor: Number(e.target.value) })}
 							/>
 						</div>
@@ -151,8 +153,8 @@ export function EditElevatorDialog({ isOpen, elevator, onClose }: EditElevatorDi
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="normal">{t('normal')}</SelectItem>
-								<SelectItem value="broken">{t('broken')}</SelectItem>
+								<SelectItem value="active">{t('active')}</SelectItem>
+								<SelectItem value="out_of_order">{t('outOfOrder')}</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

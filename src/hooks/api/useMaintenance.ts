@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { maintenanceApi } from '@/api/maintenance.api'
-import type { MaintenanceSchedule, MaintenanceScheduleCreate, MaintenanceScheduleUpdate } from '@/types/api'
+import type { MaintenanceFormData, MaintenanceSchedule } from '@/types/api'
 
 export const maintenanceKeys = {
 	all: ['maintenance-schedules'] as const,
@@ -29,7 +29,7 @@ export const useMaintenanceSchedule = (scheduleId: string) => {
 export const useCreateMaintenanceSchedule = () => {
 	const queryClient = useQueryClient()
 
-	return useMutation<MaintenanceSchedule, Error, MaintenanceScheduleCreate>({
+	return useMutation<MaintenanceSchedule, Error, MaintenanceFormData>({
 		mutationFn: maintenanceApi.createMaintenanceSchedule,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: maintenanceKeys.lists() })
@@ -40,7 +40,7 @@ export const useCreateMaintenanceSchedule = () => {
 export const useUpdateMaintenanceSchedule = () => {
 	const queryClient = useQueryClient()
 
-	return useMutation<MaintenanceSchedule, Error, { scheduleId: string; data: MaintenanceScheduleUpdate }>({
+	return useMutation<MaintenanceSchedule, Error, { scheduleId: string; data: MaintenanceFormData }>({
 		mutationFn: ({ scheduleId, data }) => maintenanceApi.updateMaintenanceSchedule(scheduleId, data),
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: maintenanceKeys.lists() })

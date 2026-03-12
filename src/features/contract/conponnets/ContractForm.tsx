@@ -19,7 +19,6 @@ export function ContractForm({ formData, setFormData, allUsers, allElevators }: 
 
 	return (
 		<div className="grid gap-4 py-4">
-			{/* Customer */}
 			<div className="space-y-2">
 				<Label>{t('customer')}</Label>
 				<Select value={formData.customerId} onValueChange={(v) => setFormData({ ...formData, customerId: v })}>
@@ -36,7 +35,6 @@ export function ContractForm({ formData, setFormData, allUsers, allElevators }: 
 				</Select>
 			</div>
 
-			{/* Elevators */}
 			<div className="space-y-2">
 				<Label>{t('linkedElevators')}</Label>
 				<div className="flex gap-2">
@@ -51,19 +49,18 @@ export function ContractForm({ formData, setFormData, allUsers, allElevators }: 
 				</div>
 			</div>
 
-			{/* Dates */}
 			<div className="grid grid-cols-2 gap-4">
 				<div className="space-y-2">
 					<Label>{t('signDate')}</Label>
 					<Input
 						type="date"
 						value={toDateInputValue(formData.signedAt)}
-						onChange={(e) =>
+						onChange={(e) => {
 							setFormData({
 								...formData,
-								signedAt: e.target.value ? new Date(e.target.value).getTime() : undefined,
+								signedAt: e.target.value ? new Date(e.target.value).getTime() / 1000 : undefined,
 							})
-						}
+						}}
 					/>
 				</div>
 				<div className="space-y-2">
@@ -74,25 +71,35 @@ export function ContractForm({ formData, setFormData, allUsers, allElevators }: 
 						onChange={(e) =>
 							setFormData({
 								...formData,
-								expiredAt: e.target.value ? new Date(e.target.value).getTime() : undefined,
+								expiredAt: e.target.value ? new Date(e.target.value).getTime() / 1000 : undefined,
 							})
 						}
 					/>
 				</div>
 			</div>
 
-			{/* Amount */}
 			<div className="space-y-2">
-				<Label>{t('amount')}</Label>
+				<Label>{t('contractAmount')}</Label>
 				<Input
 					type="number"
+					min={0}
 					value={formData.contractValue || ''}
 					onChange={(e) => setFormData({ ...formData, contractValue: Number(e.target.value) })}
 					placeholder="0"
 				/>
 			</div>
 
-			{/* Note */}
+			<div className="space-y-2">
+				<Label>{t('priority')}</Label>
+				<Input
+					type="number"
+					min={0}
+					value={formData.priority || ''}
+					onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })}
+					placeholder="0"
+				/>
+			</div>
+
 			<div className="space-y-2">
 				<Label>{t('note')}</Label>
 				<Input

@@ -14,7 +14,12 @@ interface ViewContractDialogProps {
 export function ViewContractDialog({ contractId }: ViewContractDialogProps) {
 	const navigate = useNavigate()
 	const { t } = useLanguage()
+
 	const { data: contract, isLoading } = useContract(contractId)
+
+	const navigateToElevator = (elevatorId: string) => {
+		navigate({ to: `/elevator/${elevatorId}` })
+	}
 
 	return (
 		<Dialog open={true} onOpenChange={(open) => !open && navigate({ to: '/contract' })}>
@@ -32,7 +37,6 @@ export function ViewContractDialog({ contractId }: ViewContractDialogProps) {
 
 				{contract && (
 					<div className="space-y-4 py-2">
-						{/* Customer */}
 						<div>
 							<p className="text-xs text-muted-foreground uppercase font-medium mb-2">{t('customer')}</p>
 							<div className="grid grid-cols-2 gap-3">
@@ -42,35 +46,44 @@ export function ViewContractDialog({ contractId }: ViewContractDialogProps) {
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">{t('phone')}</p>
-									<p className="font-semibold">{contract.customer.phone || '-'}</p>
-								</div>
-								<div>
-									<p className="text-sm text-muted-foreground">{t('linkedElevators')}</p>
-									<p className="font-semibold">{contract.elevators[0].code}</p>
-								</div>
-								<div>
-									<p className="text-white">.</p>
-									<p className="font-semibold">{contract.elevators[0]?.address}</p>
+									<p>{contract.customer.phone || '-'}</p>
 								</div>
 							</div>
 						</div>
 
 						<hr className="border-border" />
 
-						{/* Contract details */}
+						<div className="flex flex-col flex-wrap gap-2">
+							<p className="text-sm text-muted-foreground">{t('linkedElevators')}</p>
+							<div className="flex flex-wrap gap-2">
+								{contract.elevators.map((elevator) => (
+									<Badge
+										key={elevator.id}
+										variant="outline"
+										className="cursor-pointer hover:bg-primary/10 transition-colors"
+										onClick={() => navigateToElevator(elevator.id)}
+									>
+										{elevator.code}
+									</Badge>
+								))}
+							</div>
+						</div>
+
+						<hr className="border-border" />
+
 						<div>
 							<div className="grid grid-cols-2 gap-3">
 								<div>
 									<p className="text-sm text-muted-foreground">{t('signDate')}</p>
-									<p className="font-semibold">{formatDisplayDate(contract.signedAt)}</p>
+									<p>{formatDisplayDate(contract.signedAt)}</p>
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">{t('expiryDate')}</p>
-									<p className="font-semibold">{formatDisplayDate(contract.expiredAt)}</p>
+									<p>{formatDisplayDate(contract.expiredAt)}</p>
 								</div>
 								<div>
-									<p className="text-sm text-muted-foreground">{t('amount')}</p>
-									<p className="font-semibold">{formatCurrency(contract.contractValue)}</p>
+									<p className="text-sm text-muted-foreground">{t('contractAmount')}</p>
+									<p>{formatCurrency(contract.contractValue)}</p>
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">{t('status')}</p>
@@ -82,7 +95,7 @@ export function ViewContractDialog({ contractId }: ViewContractDialogProps) {
 							{contract.description && (
 								<div className="mt-3">
 									<p className="text-sm text-muted-foreground">{t('note')}</p>
-									<p className="font-semibold">{contract.description}</p>
+									<p>{contract.description}</p>
 								</div>
 							)}
 						</div>

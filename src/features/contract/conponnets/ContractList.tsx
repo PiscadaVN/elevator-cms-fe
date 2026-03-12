@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { FileText } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { CommonConfirmDialog } from '@/components/ui/common-confirm-dialog'
 import {
 	useContracts,
 	useCreateContract,
@@ -36,6 +37,7 @@ function ContractList() {
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 	const [editingContract, setEditingContract] = useState<Contract | null>(null)
+	const [deletingContractId, setDeletingContractId] = useState<string | null>(null)
 
 	const [formData, setFormData] = useState<ContractFormData>({
 		customerId: '',
@@ -47,8 +49,8 @@ function ContractList() {
 		note: '',
 	})
 
-	const navigateToElevator = () => {
-		navigate({ to: '/' })
+	const navigateToElevator = (elevatorId: string) => {
+		navigate({ to: `/elevator/${elevatorId}` })
 	}
 
 	const handleViewContract = (contractId: string) => {
@@ -63,6 +65,7 @@ function ContractList() {
 			expiredAt: undefined,
 			contractValue: 0,
 			status: 'active',
+			priority: 5,
 			note: '',
 		})
 	}
@@ -94,11 +97,16 @@ function ContractList() {
 		}
 	}
 
-	const handleDeleteContract = async (id: string) => {
-		if (!confirm(t('confirmDelete'))) return
+	const handleDeleteContract = (id: string) => {
+		setDeletingContractId(id)
+	}
+
+	const handleConfirmDeleteContract = async () => {
+		if (!deletingContractId) return
 
 		try {
-			await deleteContractMutation.mutateAsync(id)
+			await deleteContractMutation.mutateAsync(deletingContractId)
+			setDeletingContractId(null)
 		} catch (_error) {
 			alert(t('failedToDeleteContract'))
 		}
@@ -113,6 +121,7 @@ function ContractList() {
 			expiredAt: contract.expiredAt ?? undefined,
 			contractValue: contract.contractValue,
 			status: contract.status,
+			priority: contract.priority,
 			note: contract.note || contract.description || '',
 		})
 	}
@@ -173,6 +182,19 @@ function ContractList() {
 					onSubmit={handleUpdateContract}
 				/>
 			)}
+
+			<CommonConfirmDialog
+				open={!!deletingContractId}
+				onOpenChange={(open) => {
+					if (!open) setDeletingContractId(null)
+				}}
+				title={t('delete')}
+				content={t('confirmDelete')}
+				cancelText={t('cancel')}
+				submitText={deleteContractMutation.isPending ? t('deleting') : t('delete')}
+				onSubmit={handleConfirmDeleteContract}
+				isPending={deleteContractMutation.isPending}
+			/>
 		</div>
 	)
 }

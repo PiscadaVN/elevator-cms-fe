@@ -17,6 +17,7 @@ import { Route as DashboardIncidentRouteImport } from './routes/_dashboard/incid
 import { Route as DashboardElevatorRouteImport } from './routes/_dashboard/elevator'
 import { Route as DashboardContractRouteImport } from './routes/_dashboard/contract'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as DashboardIncidentIncidentIdRouteImport } from './routes/_dashboard/incident.$incidentId'
 import { Route as DashboardElevatorElevatorIdRouteImport } from './routes/_dashboard/elevator.$elevatorId'
 import { Route as DashboardContractContractIdRouteImport } from './routes/_dashboard/contract.$contractId'
 
@@ -59,6 +60,12 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIncidentIncidentIdRoute =
+  DashboardIncidentIncidentIdRouteImport.update({
+    id: '/$incidentId',
+    path: '/$incidentId',
+    getParentRoute: () => DashboardIncidentRoute,
+  } as any)
 const DashboardElevatorElevatorIdRoute =
   DashboardElevatorElevatorIdRouteImport.update({
     id: '/$elevatorId',
@@ -77,22 +84,24 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/contract': typeof DashboardContractRouteWithChildren
   '/elevator': typeof DashboardElevatorRouteWithChildren
-  '/incident': typeof DashboardIncidentRoute
+  '/incident': typeof DashboardIncidentRouteWithChildren
   '/maintenance': typeof DashboardMaintenanceRoute
   '/user': typeof DashboardUserRoute
   '/contract/$contractId': typeof DashboardContractContractIdRoute
   '/elevator/$elevatorId': typeof DashboardElevatorElevatorIdRoute
+  '/incident/$incidentId': typeof DashboardIncidentIncidentIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/contract': typeof DashboardContractRouteWithChildren
   '/elevator': typeof DashboardElevatorRouteWithChildren
-  '/incident': typeof DashboardIncidentRoute
+  '/incident': typeof DashboardIncidentRouteWithChildren
   '/maintenance': typeof DashboardMaintenanceRoute
   '/user': typeof DashboardUserRoute
   '/': typeof DashboardIndexRoute
   '/contract/$contractId': typeof DashboardContractContractIdRoute
   '/elevator/$elevatorId': typeof DashboardElevatorElevatorIdRoute
+  '/incident/$incidentId': typeof DashboardIncidentIncidentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -100,12 +109,13 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_dashboard/contract': typeof DashboardContractRouteWithChildren
   '/_dashboard/elevator': typeof DashboardElevatorRouteWithChildren
-  '/_dashboard/incident': typeof DashboardIncidentRoute
+  '/_dashboard/incident': typeof DashboardIncidentRouteWithChildren
   '/_dashboard/maintenance': typeof DashboardMaintenanceRoute
   '/_dashboard/user': typeof DashboardUserRoute
   '/_dashboard/': typeof DashboardIndexRoute
   '/_dashboard/contract/$contractId': typeof DashboardContractContractIdRoute
   '/_dashboard/elevator/$elevatorId': typeof DashboardElevatorElevatorIdRoute
+  '/_dashboard/incident/$incidentId': typeof DashboardIncidentIncidentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/user'
     | '/contract/$contractId'
     | '/elevator/$elevatorId'
+    | '/incident/$incidentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/contract/$contractId'
     | '/elevator/$elevatorId'
+    | '/incident/$incidentId'
   id:
     | '__root__'
     | '/_dashboard'
@@ -142,6 +154,7 @@ export interface FileRouteTypes {
     | '/_dashboard/'
     | '/_dashboard/contract/$contractId'
     | '/_dashboard/elevator/$elevatorId'
+    | '/_dashboard/incident/$incidentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/incident/$incidentId': {
+      id: '/_dashboard/incident/$incidentId'
+      path: '/$incidentId'
+      fullPath: '/incident/$incidentId'
+      preLoaderRoute: typeof DashboardIncidentIncidentIdRouteImport
+      parentRoute: typeof DashboardIncidentRoute
+    }
     '/_dashboard/elevator/$elevatorId': {
       id: '/_dashboard/elevator/$elevatorId'
       path: '/$elevatorId'
@@ -246,10 +266,21 @@ const DashboardElevatorRouteChildren: DashboardElevatorRouteChildren = {
 const DashboardElevatorRouteWithChildren =
   DashboardElevatorRoute._addFileChildren(DashboardElevatorRouteChildren)
 
+interface DashboardIncidentRouteChildren {
+  DashboardIncidentIncidentIdRoute: typeof DashboardIncidentIncidentIdRoute
+}
+
+const DashboardIncidentRouteChildren: DashboardIncidentRouteChildren = {
+  DashboardIncidentIncidentIdRoute: DashboardIncidentIncidentIdRoute,
+}
+
+const DashboardIncidentRouteWithChildren =
+  DashboardIncidentRoute._addFileChildren(DashboardIncidentRouteChildren)
+
 interface DashboardRouteRouteChildren {
   DashboardContractRoute: typeof DashboardContractRouteWithChildren
   DashboardElevatorRoute: typeof DashboardElevatorRouteWithChildren
-  DashboardIncidentRoute: typeof DashboardIncidentRoute
+  DashboardIncidentRoute: typeof DashboardIncidentRouteWithChildren
   DashboardMaintenanceRoute: typeof DashboardMaintenanceRoute
   DashboardUserRoute: typeof DashboardUserRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -258,7 +289,7 @@ interface DashboardRouteRouteChildren {
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardContractRoute: DashboardContractRouteWithChildren,
   DashboardElevatorRoute: DashboardElevatorRouteWithChildren,
-  DashboardIncidentRoute: DashboardIncidentRoute,
+  DashboardIncidentRoute: DashboardIncidentRouteWithChildren,
   DashboardMaintenanceRoute: DashboardMaintenanceRoute,
   DashboardUserRoute: DashboardUserRoute,
   DashboardIndexRoute: DashboardIndexRoute,

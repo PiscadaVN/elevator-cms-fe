@@ -38,8 +38,8 @@ export function AddElevatorDialog({ isOpen, onClose }: AddElevatorDialogProps) {
 	const [formData, setFormData] = useState<ElevatorCreate>({
 		code: '',
 		address: '',
-		minFloor: 0,
-		maxFloor: 0,
+		minFloor: 1,
+		maxFloor: 2,
 		operatorIds: [],
 	})
 
@@ -47,8 +47,8 @@ export function AddElevatorDialog({ isOpen, onClose }: AddElevatorDialogProps) {
 		setFormData({
 			code: '',
 			address: '',
-			minFloor: 0,
-			maxFloor: 0,
+			minFloor: 1,
+			maxFloor: 2,
 			operatorIds: [],
 		})
 	}, [])
@@ -105,6 +105,7 @@ export function AddElevatorDialog({ isOpen, onClose }: AddElevatorDialogProps) {
 							<Label>{t('minFloor')}</Label>
 							<Input
 								type="number"
+								min={1}
 								value={formData.minFloor}
 								onChange={(e) => setFormData({ ...formData, minFloor: Number(e.target.value) })}
 							/>
@@ -114,6 +115,7 @@ export function AddElevatorDialog({ isOpen, onClose }: AddElevatorDialogProps) {
 							<Label>{t('maxFloor')}</Label>
 							<Input
 								type="number"
+								min={2}
 								value={formData.maxFloor}
 								onChange={(e) => setFormData({ ...formData, maxFloor: Number(e.target.value) })}
 							/>

@@ -1,5 +1,7 @@
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { CommonConfirmDialog } from '@/components/ui/common-confirm-dialog'
 import { canTransitionIncidentStatus, IncidentStatusEnum } from '@/features/incident/helpers/status-transition'
 import { useElevators } from '@/hooks/api/useElevator'
 import { useCreateIncident, useDeleteIncident, useIncidents, useUpdateIncident } from '@/hooks/api/useIncident'
@@ -11,6 +13,7 @@ import { EditIncidentDialog } from './EditIncidentDialog'
 import { IncidentTable } from './IncidentTable'
 
 export function IncidentList() {
+	const navigate = useNavigate()
 	const { t } = useLanguage()
 
 	const { data: incidents = [], isLoading } = useIncidents()
@@ -21,6 +24,7 @@ export function IncidentList() {
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 	const [editingIncident, setEditingIncident] = useState<Incident | null>(null)
+	const [deletingIncidentId, setDeletingIncidentId] = useState<string | null>(null)
 
 	const [formData, setFormData] = useState<IncidentFormData>({
 		elevatorId: '',
@@ -73,11 +77,16 @@ export function IncidentList() {
 		}
 	}
 
-	const handleDeleteIncident = async (id: string) => {
-		if (!confirm(t('confirmDeleteIncident'))) return
+	const handleDeleteIncident = (id: string) => {
+		setDeletingIncidentId(id)
+	}
+
+	const handleConfirmDeleteIncident = async () => {
+		if (!deletingIncidentId) return
 
 		try {
-			await deleteMutation.mutateAsync(id)
+			await deleteMutation.mutateAsync(deletingIncidentId)
+			setDeletingIncidentId(null)
 		} catch (_error) {
 			alert(t('failedToDeleteIncident'))
 		}
@@ -123,6 +132,10 @@ export function IncidentList() {
 		})
 	}
 
+	const openDetailDialog = (incidentId: string) => {
+		navigate({ to: `/incident/${incidentId}` })
+	}
+
 	return (
 		<div className="p-8 space-y-8 max-w-7xl mx-auto">
 			<header className="flex justify-between items-center border-b pb-6">
@@ -144,6 +157,7 @@ export function IncidentList() {
 			<IncidentTable
 				incidents={incidents}
 				isLoading={isLoading}
+				onView={openDetailDialog}
 				onEdit={openEditDialog}
 				onDelete={handleDeleteIncident}
 				onUpdateStatus={handleUpdateStatus}
@@ -159,6 +173,19 @@ export function IncidentList() {
 				setFormData={setFormData}
 				onSubmit={handleUpdateIncident}
 				isPending={updateMutation.isPending}
+			/>
+
+			<CommonConfirmDialog
+				open={!!deletingIncidentId}
+				onOpenChange={(open) => {
+					if (!open) setDeletingIncidentId(null)
+				}}
+				title={t('delete')}
+				content={t('confirmDeleteIncident')}
+				cancelText={t('cancel')}
+				submitText={deleteMutation.isPending ? t('deleting') : t('delete')}
+				onSubmit={handleConfirmDeleteIncident}
+				isPending={deleteMutation.isPending}
 			/>
 		</div>
 	)

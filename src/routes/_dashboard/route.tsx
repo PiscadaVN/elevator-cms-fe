@@ -1,7 +1,21 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from '@tanstack/react-router'
-import { AlertCircle, Languages, LayoutDashboard, Newspaper, Users, Wrench } from 'lucide-react'
+import {
+	AlertCircle,
+	ChevronDown,
+	LayoutDashboard,
+	Lock,
+	LogOut,
+	Newspaper,
+	User as UserIcon,
+	Users,
+	Wrench,
+} from 'lucide-react'
+import { useState } from 'react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ChangePasswordDialog } from '@/features/auth/components/ChangePasswordDialog'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useCurrentUser } from '@/hooks/api/useUser'
 import { useLanguage } from '@/i18n/LanguageContext'
@@ -24,13 +38,26 @@ function RouteComponent() {
 
 	useCurrentUser()
 
-	const { user } = useAuth()
-	const { language, setLanguage, t } = useLanguage()
+	const { user, logout } = useAuth()
+	const { t } = useLanguage()
+
+	const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
 	if (!user) return null
 
 	const handleNavigate = (path: string) => {
 		navigate({ to: path })
+	}
+
+	const handleChangePassword = () => {
+		setIsChangePasswordOpen(true)
+		setIsUserMenuOpen(false)
+	}
+
+	const handleLogout = async () => {
+		setIsUserMenuOpen(false)
+		await logout()
 	}
 
 	return (
@@ -82,21 +109,49 @@ function RouteComponent() {
 					</Button>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setLanguage(language === 'en' ? 'vi' : 'en')}
-						className="rounded-full h-8 px-3"
-					>
-						<Languages className="w-4 h-4 mr-2" />
-						<span className="text-xs font-bold uppercase">{language}</span>
-					</Button>
+					<Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+						<PopoverTrigger asChild>
+							<Button variant="ghost" size="sm" className="rounded-full h-8 px-2">
+								<div className="flex items-center gap-2">
+									<div className="p-1 bg-primary/5 rounded-full">
+										<UserIcon className="w-4 h-4 text-primary" />
+									</div>
+									<div className="text-xs sm:text-sm leading-none">
+										<span className="font-medium">{user.fullName}</span>
+										<Badge variant="outline" className="ml-1 uppercase text-[10px] py-1">
+											{user.role}
+										</Badge>
+									</div>
+									<ChevronDown className="w-4 h-4 text-muted-foreground" />
+								</div>
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-48" align="end">
+							<div className="flex flex-col gap-2">
+								<Button variant="ghost" size="sm" className="justify-start" onClick={handleChangePassword}>
+									<Lock className="w-4 h-4 mr-2" />
+									{t('changePassword')}
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									className="justify-start text-destructive hover:text-destructive"
+									onClick={handleLogout}
+								>
+									<LogOut className="w-4 h-4 mr-2" />
+									{t('logout')}
+								</Button>
+							</div>
+						</PopoverContent>
+					</Popover>
 				</div>
 			</nav>
 
 			<main className="flex-1 overflow-auto">
 				<Outlet />
 			</main>
+
+			<ChangePasswordDialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
 		</div>
 	)
 }

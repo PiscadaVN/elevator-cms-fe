@@ -1,10 +1,9 @@
 import { useNavigate } from '@tanstack/react-router'
-import { LogOut, Plus, User as UserIcon } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/features/auth/hooks/useAuth'
+import { CommonConfirmDialog } from '@/components/ui/common-confirm-dialog'
 import { useDeleteElevator, useElevators } from '@/hooks/api/useElevator'
 import { useLanguage } from '@/i18n/LanguageContext'
 import type { Elevator } from '@/types/api'
@@ -16,7 +15,6 @@ import { ElevatorTable } from './ElevatorTable'
 export function ElevatorDashboard() {
 	const navigate = useNavigate()
 
-	const { user, logout } = useAuth()
 	const { t } = useLanguage()
 
 	const { data: elevators = [], isLoading: loadingElevators } = useElevators()
@@ -24,6 +22,7 @@ export function ElevatorDashboard() {
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 	const [editingElevator, setEditingElevator] = useState<Elevator | null>(null)
+	const [deletingElevatorId, setDeletingElevatorId] = useState<string | null>(null)
 
 	// const stats = useMemo(() => {
 	// 	return {
@@ -34,11 +33,16 @@ export function ElevatorDashboard() {
 	// 	}
 	// }, [elevators])
 
-	const handleDeleteElevator = async (id: string) => {
-		if (!confirm(t('confirmDeleteElevator'))) return
+	const handleDeleteElevator = (id: string) => {
+		setDeletingElevatorId(id)
+	}
+
+	const handleConfirmDeleteElevator = async () => {
+		if (!deletingElevatorId) return
 
 		try {
-			await deleteMutation.mutateAsync(id)
+			await deleteMutation.mutateAsync(deletingElevatorId)
+			setDeletingElevatorId(null)
 		} catch (_error) {
 			alert(t('failedToDeleteElevator'))
 		}
@@ -50,31 +54,10 @@ export function ElevatorDashboard() {
 
 	return (
 		<div className="p-8 space-y-8 max-w-7xl mx-auto">
-			<header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
+			<header className="border-b pb-6">
 				<div>
 					<h1 className="text-4xl font-bold tracking-tight">{t('appName')}</h1>
 					<p className="text-muted-foreground mt-2">{t('elevatorOverviewDesc')}</p>
-				</div>
-				<div className="flex items-center gap-4">
-					<div className="flex items-center gap-3 bg-white p-2 px-4 rounded-full border shadow-sm">
-						<div className="p-1.5 bg-primary/5 rounded-full">
-							<UserIcon className="w-4 h-4 text-primary" />
-						</div>
-						<div className="text-sm">
-							<span className="font-medium">{user?.name}</span>
-							<Badge variant="outline" className="ml-2 uppercase text-[10px] py-0">
-								{user?.role}
-							</Badge>
-						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8 text-muted-foreground hover:text-destructive"
-							onClick={logout}
-						>
-							<LogOut className="w-4 h-4" />
-						</Button>
-					</div>
 				</div>
 			</header>
 
@@ -104,6 +87,19 @@ export function ElevatorDashboard() {
 					elevator={editingElevator}
 				/>
 			)}
+
+			<CommonConfirmDialog
+				open={!!deletingElevatorId}
+				onOpenChange={(open) => {
+					if (!open) setDeletingElevatorId(null)
+				}}
+				title={t('delete')}
+				content={t('confirmDeleteElevator')}
+				cancelText={t('cancel')}
+				submitText={deleteMutation.isPending ? t('deleting') : t('delete')}
+				onSubmit={handleConfirmDeleteElevator}
+				isPending={deleteMutation.isPending}
+			/>
 		</div>
 	)
 }

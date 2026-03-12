@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/i18n/LanguageContext'
 import type { Elevator, IncidentFormData } from '@/types/api'
+import { getPriorityLabel, IncidentPriorityEnum } from '@/features/incident/helpers/status-transition'
 
 interface AddIncidentDialogProps {
 	open: boolean
@@ -78,12 +79,21 @@ export function AddIncidentDialog({
 					</div>
 					<div className="space-y-2">
 						<Label>{t('priority')}</Label>
-						<Input
-							type="number"
-							value={formData.priority as number}
-							onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })}
-							placeholder={t('priorityPlaceholder')}
-						/>
+						<Select
+							value={formData.priority.toString()}
+							onValueChange={(v) => setFormData({ ...formData, priority: Number(v) })}
+						>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{Object.values(IncidentPriorityEnum).map((priority) => (
+									<SelectItem key={priority} value={priority.toString()}>
+										{getPriorityLabel(priority, t)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 				</div>
 				<DialogFooter>

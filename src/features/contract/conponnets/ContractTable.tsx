@@ -14,7 +14,7 @@ interface ContractTableProps {
 	onView: (contractId: string) => void
 	onEdit: (contract: Contract) => void
 	onDelete: (contractId: string) => void
-	onElevatorClick: () => void
+	onElevatorClick: (elevatorId: string) => void
 	isDeleting?: boolean
 }
 
@@ -34,6 +34,7 @@ export function ContractTable({
 				<CardTitle>{t('allContracts')}</CardTitle>
 				<CardDescription>{t('contractListDesc')}</CardDescription>
 			</CardHeader>
+
 			<CardContent>
 				{contracts.length === 0 ? (
 					<div className="text-center py-12 text-muted-foreground">{t('noContractsFound')}</div>
@@ -42,20 +43,30 @@ export function ContractTable({
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t('customer')}</TableHead>
+
 								<TableHead>{t('linkedElevators')}</TableHead>
-								<TableHead>{t('signDate')}</TableHead>
-								<TableHead>{t('expiryDate')}</TableHead>
-								<TableHead>{t('amount')}</TableHead>
+
+								<TableHead className="text-center">{t('signDate')}</TableHead>
+
+								<TableHead className="text-center">{t('expiryDate')}</TableHead>
+
+								<TableHead className="text-center">{t('contractAmount')}</TableHead>
+
+								<TableHead className="text-center">{t('priority')}</TableHead>
+
 								<TableHead>{t('status')}</TableHead>
+
 								<TableHead className="text-right">{t('actions')}</TableHead>
 							</TableRow>
 						</TableHeader>
+
 						<TableBody>
 							{contracts.map((contract) => (
 								<TableRow key={contract.id}>
 									<TableCell>
 										<div className="font-medium">{contract.customer.fullName}</div>
 									</TableCell>
+
 									<TableCell>
 										<div className="flex flex-wrap gap-1">
 											{contract.elevators.map((elevator) => (
@@ -63,21 +74,28 @@ export function ContractTable({
 													key={elevator.id}
 													variant="outline"
 													className="cursor-pointer hover:bg-primary/10 transition-colors"
-													onClick={onElevatorClick}
+													onClick={() => onElevatorClick(elevator.id)}
 												>
 													{elevator.code}
 												</Badge>
 											))}
 										</div>
 									</TableCell>
-									<TableCell>{formatDisplayDate(contract.signedAt)}</TableCell>
-									<TableCell>{formatDisplayDate(contract.expiredAt)}</TableCell>
-									<TableCell className="font-semibold">{formatCurrency(contract.contractValue)}</TableCell>
+
+									<TableCell className="text-center">{formatDisplayDate(contract.signedAt)}</TableCell>
+
+									<TableCell className="text-center">{formatDisplayDate(contract.expiredAt)}</TableCell>
+
+									<TableCell className="text-center font-semibold">{formatCurrency(contract.contractValue)}</TableCell>
+
+									<TableCell className="text-center font-semibold">{contract.priority}</TableCell>
+
 									<TableCell>
 										<Badge variant={contract.isActive ? 'success' : 'destructive'}>
-											{t(contract.isActive ? 'active' : 'expired')}
+											{t(contract.isActive ? 'contractActive' : 'contractExpired')}
 										</Badge>
 									</TableCell>
+
 									<TableCell className="text-right space-x-1">
 										<Button variant="ghost" size="icon" onClick={() => onView(contract.id)}>
 											<Eye className="w-4 h-4 text-primary" />
