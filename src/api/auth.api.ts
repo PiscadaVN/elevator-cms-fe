@@ -1,66 +1,64 @@
 import {
-  apiPostFormData,
-  apiPost,
-  getAuthToken,
-  setAuthToken,
-  setRefreshToken,
-  removeAuthToken,
-  getRefreshToken,
-} from '@/lib/api-client';
-import type {
-  LoginRequest,
-  TokenResponse,
-  RefreshTokenRequest,
-  PasswordChangeRequest,
-} from '@/types/api';
+	apiPost,
+	apiPostFormData,
+	getAuthToken,
+	getRefreshToken,
+	removeAuthToken,
+	setAuthToken,
+	setRefreshToken,
+} from '@/lib/api-client'
+import type { LoginRequest, PasswordChangeRequest, RefreshTokenRequest, TokenResponse } from '@/types/api'
+import { UserRoles } from '@/lib/role-utils'
 
 export const authApi = {
-  login: async (data: LoginRequest): Promise<TokenResponse> => {
-    const response = await apiPostFormData<TokenResponse>(
-      'auth/login',
-      {
-        username: data.username,
-        password: data.password,
-        grant_type: data.grant_type || 'password',
-        scope: data.scope || '',
-      },
-      false,
-    );
+	login: async (data: LoginRequest): Promise<TokenResponse> => {
+		const response = await apiPostFormData<TokenResponse>(
+			'auth/login',
+			{
+				username: data.username,
+				password: data.password,
+			},
+			false,
+		)
 
-    setAuthToken(response.access_token);
-    setRefreshToken(response.refresh_token);
+		if (response.role !== UserRoles.ADMIN) {
+			throw new Error('Login failed')
+		}
 
-    return response;
-  },
+		setAuthToken(response.accessToken)
+		setRefreshToken(response.refreshToken)
 
-  refreshToken: async (): Promise<TokenResponse> => {
-    const refresh_token = getRefreshToken();
-    if (!refresh_token) {
-      throw new Error('No refresh token available');
-    }
+		return response
+	},
 
-    const response = await apiPost<TokenResponse>(
-      'auth/refresh_token',
-      { refresh_token } as RefreshTokenRequest,
-      false,
-    );
+	refreshToken: async (): Promise<TokenResponse> => {
+		const refresh_token = getRefreshToken()
+		if (!refresh_token) {
+			throw new Error('No refresh token available')
+		}
 
-    setAuthToken(response.access_token);
-    setRefreshToken(response.refresh_token);
+		const response = await apiPost<TokenResponse>(
+			'auth/refresh_token',
+			{ refreshToken: refresh_token } as RefreshTokenRequest,
+			false,
+		)
 
-    return response;
-  },
+		setAuthToken(response.accessToken)
+		setRefreshToken(response.refreshToken)
 
-  logout: async (): Promise<void> => {
-    await apiPost<void>('auth/logout', undefined, true);
-    removeAuthToken();
-  },
+		return response
+	},
 
-  changePassword: async (data: PasswordChangeRequest): Promise<void> => {
-    return apiPost<void>('auth/password', data, true);
-  },
+	logout: async (): Promise<void> => {
+		await apiPost<void>('auth/logout', undefined, true)
+		removeAuthToken()
+	},
 
-  isAuthenticated: (): boolean => {
-    return !!getAuthToken();
-  },
-};
+	changePassword: async (data: PasswordChangeRequest): Promise<void> => {
+		return apiPost<void>('auth/password', data, true)
+	},
+
+	isAuthenticated: (): boolean => {
+		return !!getAuthToken()
+	},
+}

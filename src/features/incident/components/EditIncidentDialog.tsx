@@ -10,23 +10,27 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { getNextIncidentStatuses } from '@/features/incident/helpers/status-transition'
+import {
+	getNextIncidentStatuses,
+	getPriorityLabel,
+	getStatusLabel,
+	IncidentPriorityEnum,
+	IncidentStatusEnum,
+} from '@/features/incident/helpers/status-transition'
 import { useLanguage } from '@/i18n/LanguageContext'
-import type { Incident, IncidentPriority, IncidentStatus, UserRole } from '@/types'
+import type { Incident, IncidentFormData, IncidentStatus } from '@/types/api'
 
 interface EditIncidentDialogProps {
 	incident: Incident | null
-	currentUserRole?: UserRole | null
 	onClose: () => void
-	formData: Partial<Incident>
-	setFormData: (data: Partial<Incident>) => void
+	formData: IncidentFormData
+	setFormData: (data: IncidentFormData) => void
 	onSubmit: () => void
 	isPending?: boolean
 }
 
 export function EditIncidentDialog({
 	incident,
-	currentUserRole,
 	onClose,
 	formData,
 	setFormData,
@@ -35,32 +39,14 @@ export function EditIncidentDialog({
 }: EditIncidentDialogProps) {
 	const { t } = useLanguage()
 
-	const baseStatus = incident?.status ?? 'new'
-	const allowedStatuses = [baseStatus, ...getNextIncidentStatuses(baseStatus, currentUserRole)].filter(
-		(status, index, arr) => arr.indexOf(status) === index,
-	)
-
-	const getStatusLabel = (status: IncidentStatus) => {
-		switch (status) {
-			case 'new':
-				return t('new')
-			case 'in_progress':
-				return t('inProgress')
-			case 'pending_approval':
-				return t('pendingApproval')
-			case 'completed':
-				return t('completed')
-			case 'rejected':
-				return t('rejected')
-		}
-	}
+	const nextStatuses = getNextIncidentStatuses(incident?.status ?? IncidentStatusEnum.NEW)
 
 	return (
 		<Dialog open={!!incident} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>
-						{t('edit')}: {incident?.id}
+						{t('edit')} {t('incidents').toLowerCase()}
 					</DialogTitle>
 					<DialogDescription>{t('updateIncidentDesc')}</DialogDescription>
 				</DialogHeader>
@@ -68,23 +54,25 @@ export function EditIncidentDialog({
 					<div className="space-y-2">
 						<Label>{t('description')}</Label>
 						<Input
-							value={formData.description}
+							value={formData.description ?? ''}
 							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
 						/>
 					</div>
 					<div className="space-y-2">
 						<Label>{t('priority')}</Label>
 						<Select
-							value={formData.priority}
-							onValueChange={(v) => setFormData({ ...formData, priority: v as IncidentPriority })}
+							value={formData.priority.toString()}
+							onValueChange={(v) => setFormData({ ...formData, priority: Number(v) })}
 						>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="low">{t('low')}</SelectItem>
-								<SelectItem value="medium">{t('medium')}</SelectItem>
-								<SelectItem value="high">{t('high')}</SelectItem>
+								{Object.values(IncidentPriorityEnum).map((priority) => (
+									<SelectItem key={priority} value={priority.toString()}>
+										{getPriorityLabel(priority, t)}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>
@@ -93,14 +81,15 @@ export function EditIncidentDialog({
 						<Select
 							value={formData.status}
 							onValueChange={(v) => setFormData({ ...formData, status: v as IncidentStatus })}
+							disabled={nextStatuses.length === 1}
 						>
-							<SelectTrigger disabled={allowedStatuses.length <= 1}>
+							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								{allowedStatuses.map((status) => (
+								{nextStatuses.map((status) => (
 									<SelectItem key={status} value={status}>
-										{getStatusLabel(status)}
+										{getStatusLabel(status, t)}
 									</SelectItem>
 								))}
 							</SelectContent>

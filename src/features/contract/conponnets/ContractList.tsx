@@ -2,12 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { FileText } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { useAuth } from '@/features/auth/hooks/useAuth'
-import { useLanguage } from '@/i18n/LanguageContext'
-import type { Contract, Elevator, User } from '@/types'
-import { AddContractDialog } from './AddContractDialog'
-import { EditContractDialog } from './EditContractDialog'
-import { ContractTable } from './ContractTable'
+import { CommonConfirmDialog } from '@/components/ui/common-confirm-dialog'
 import {
 	useContracts,
 	useCreateContract,
@@ -16,22 +11,19 @@ import {
 	useUpdateContract,
 	useUsers,
 } from '@/hooks/api'
-import {
-	mapApiContractToLocal,
-	mapLocalToApiCreate,
-	mapLocalToApiUpdate,
-	type LocalContract,
-} from '../helpers/contract-mappers'
-import { isAdmin as checkIsAdmin } from '@/lib/role-utils'
+import { useLanguage } from '@/i18n/LanguageContext'
+import { UserRoles } from '@/lib/role-utils'
+import type { Contract, ContractFormData } from '@/types/api'
+
+import { AddContractDialog } from './AddContractDialog'
+import { ContractTable } from './ContractTable'
+import { EditContractDialog } from './EditContractDialog'
 
 function ContractList() {
 	const navigate = useNavigate()
 	const { t } = useLanguage()
-	const { user: currentUser } = useAuth()
 
-	const isAdmin = checkIsAdmin(currentUser?.role)
-
-	const { data: apiContracts, isLoading: loadingContracts } = useContracts()
+	const { data: contracts, isLoading: loadingContracts } = useContracts()
 	const { data: apiUsers, isLoading: loadingUsers } = useUsers()
 	const { data: apiElevators, isLoading: loadingElevators } = useElevators()
 
@@ -39,64 +31,26 @@ function ContractList() {
 	const updateContractMutation = useUpdateContract()
 	const deleteContractMutation = useDeleteContract()
 
-	const contracts = useMemo(() => {
-		return apiContracts?.map(mapApiContractToLocal) || []
-	}, [apiContracts])
+	const allUsers = useMemo(() => apiUsers?.filter((u) => u.role === UserRoles.USER) || [], [apiUsers])
 
-	const allUsers = useMemo(() => {
-		return (
-			apiUsers?.map((user) => ({
-				id: user.id,
-				name: user.full_name,
-				email: user.email,
-				role: user.role,
-			})) || []
-		)
-	}, [apiUsers])
-
-	const allElevators = useMemo(() => {
-		return (
-			apiElevators?.map((elevator) => ({
-				id: elevator.id,
-				name: elevator.name || elevator.elevator_code,
-				code: elevator.elevator_code,
-				status: elevator.status,
-			})) || []
-		)
-	}, [apiElevators])
+	const allElevators = useMemo(() => apiElevators || [], [apiElevators])
 
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-	const [editingContract, setEditingContract] = useState<LocalContract | null>(null)
+	const [editingContract, setEditingContract] = useState<Contract | null>(null)
+	const [deletingContractId, setDeletingContractId] = useState<string | null>(null)
 
-	const [formData, setFormData] = useState<Partial<LocalContract>>({
+	const [formData, setFormData] = useState<ContractFormData>({
 		customerId: '',
 		elevatorIds: [],
-		signDate: '',
-		expiryDate: '',
-		amount: 0,
-		serviceCycle: '1m',
+		signedAt: undefined,
+		expiredAt: undefined,
+		contractValue: 0,
 		status: 'active',
 		note: '',
 	})
 
-	const [selectedElevatorId, setSelectedElevatorId] = useState('')
-
-	const visibleContracts = useMemo(() => {
-		if (isAdmin) return contracts
-		if (!currentUser) return []
-		return contracts.filter((c) => c.customerId === currentUser.id)
-	}, [contracts, currentUser, isAdmin])
-
-	const getUserName = (userId: string) => {
-		return allUsers.find((u) => u.id === userId)?.name || userId
-	}
-
-	const getElevatorName = (elevatorId: string) => {
-		return allElevators.find((e) => e.id === elevatorId)?.name || elevatorId
-	}
-
-	const navigateToElevator = () => {
-		navigate({ to: '/' })
+	const navigateToElevator = (elevatorId: string) => {
+		navigate({ to: `/elevator/${elevatorId}` })
 	}
 
 	const handleViewContract = (contractId: string) => {
@@ -107,22 +61,20 @@ function ContractList() {
 		setFormData({
 			customerId: '',
 			elevatorIds: [],
-			signDate: '',
-			expiryDate: '',
-			amount: 0,
-			serviceCycle: '1m',
+			signedAt: undefined,
+			expiredAt: undefined,
+			contractValue: 0,
 			status: 'active',
+			priority: 5,
 			note: '',
 		})
-		setSelectedElevatorId('')
 	}
 
 	const handleAddContract = async () => {
-		if (!formData.customerId || !formData.signDate || !formData.expiryDate || !formData.elevatorIds?.length) return
+		if (!formData.customerId || !formData.signedAt || !formData.expiredAt || !formData.elevatorIds?.length) return
 
 		try {
-			const apiData = mapLocalToApiCreate(formData)
-			await createContractMutation.mutateAsync(apiData)
+			await createContractMutation.mutateAsync(formData)
 			setIsAddDialogOpen(false)
 			resetForm()
 		} catch (_error) {
@@ -134,10 +86,9 @@ function ContractList() {
 		if (!editingContract) return
 
 		try {
-			const apiData = mapLocalToApiUpdate(formData)
 			await updateContractMutation.mutateAsync({
 				contractId: editingContract.id,
-				data: apiData,
+				data: formData,
 			})
 			setEditingContract(null)
 			resetForm()
@@ -146,28 +97,32 @@ function ContractList() {
 		}
 	}
 
-	const handleDeleteContract = async (id: string) => {
-		if (!confirm(t('confirmDelete'))) return
+	const handleDeleteContract = (id: string) => {
+		setDeletingContractId(id)
+	}
+
+	const handleConfirmDeleteContract = async () => {
+		if (!deletingContractId) return
 
 		try {
-			await deleteContractMutation.mutateAsync(id)
+			await deleteContractMutation.mutateAsync(deletingContractId)
+			setDeletingContractId(null)
 		} catch (_error) {
-			// Error handling
 			alert(t('failedToDeleteContract'))
 		}
 	}
 
-	const openEditDialog = (contract: LocalContract) => {
+	const openEditDialog = (contract: Contract) => {
 		setEditingContract(contract)
 		setFormData({
-			customerId: contract.customerId,
-			elevatorIds: contract.elevatorIds,
-			signDate: contract.signDate,
-			expiryDate: contract.expiryDate,
-			amount: contract.amount,
-			serviceCycle: contract.serviceCycle,
+			customerId: contract.customer.id,
+			elevatorIds: contract.elevators.map((elevator) => elevator.id),
+			signedAt: contract.signedAt ?? undefined,
+			expiredAt: contract.expiredAt ?? undefined,
+			contractValue: contract.contractValue,
 			status: contract.status,
-			note: contract.note,
+			priority: contract.priority,
+			note: contract.note || contract.description || '',
 		})
 	}
 
@@ -193,28 +148,19 @@ function ContractList() {
 					<p className="text-muted-foreground mt-2">{t('contractManagementDesc')}</p>
 				</div>
 
-				{isAdmin && (
-					<AddContractDialog
-						open={isAddDialogOpen}
-						onOpenChange={setIsAddDialogOpen}
-						formData={formData as Partial<Contract>}
-						setFormData={setFormData as (data: Partial<Contract>) => void}
-						selectedElevatorId={selectedElevatorId}
-						setSelectedElevatorId={setSelectedElevatorId}
-						allUsers={allUsers as User[]}
-						allElevators={allElevators as unknown as Elevator[]}
-						isAdmin={isAdmin}
-						getElevatorName={getElevatorName}
-						onSubmit={handleAddContract}
-					/>
-				)}
+				<AddContractDialog
+					open={isAddDialogOpen}
+					onOpenChange={setIsAddDialogOpen}
+					formData={formData}
+					setFormData={setFormData}
+					allUsers={allUsers}
+					allElevators={allElevators}
+					onSubmit={handleAddContract}
+				/>
 			</header>
 
 			<ContractTable
-				contracts={visibleContracts}
-				isAdmin={isAdmin}
-				getUserName={getUserName}
-				getElevatorName={getElevatorName}
+				contracts={contracts || []}
 				onView={handleViewContract}
 				onEdit={openEditDialog}
 				onDelete={handleDeleteContract}
@@ -224,22 +170,31 @@ function ContractList() {
 
 			{editingContract && (
 				<EditContractDialog
-					contract={editingContract as Contract}
+					contract={{ id: editingContract.id }}
 					onClose={() => {
 						setEditingContract(null)
 						resetForm()
 					}}
-					formData={formData as Partial<Contract>}
-					setFormData={setFormData as (data: Partial<Contract>) => void}
-					selectedElevatorId={selectedElevatorId}
-					setSelectedElevatorId={setSelectedElevatorId}
-					allUsers={allUsers as User[]}
-					allElevators={allElevators as unknown as Elevator[]}
-					isAdmin={isAdmin}
-					getElevatorName={getElevatorName}
+					formData={formData}
+					setFormData={setFormData}
+					allUsers={allUsers}
+					allElevators={allElevators}
 					onSubmit={handleUpdateContract}
 				/>
 			)}
+
+			<CommonConfirmDialog
+				open={!!deletingContractId}
+				onOpenChange={(open) => {
+					if (!open) setDeletingContractId(null)
+				}}
+				title={t('delete')}
+				content={t('confirmDelete')}
+				cancelText={t('cancel')}
+				submitText={deleteContractMutation.isPending ? t('deleting') : t('delete')}
+				onSubmit={handleConfirmDeleteContract}
+				isPending={deleteContractMutation.isPending}
+			/>
 		</div>
 	)
 }

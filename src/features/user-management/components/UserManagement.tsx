@@ -1,63 +1,60 @@
-import { useMemo, useState } from 'react'
 import { Users } from 'lucide-react'
-import { useLanguage } from '@/i18n/LanguageContext'
-import type { User } from '@/types'
+import { useState } from 'react'
+
+import { CommonConfirmDialog } from '@/components/ui/common-confirm-dialog'
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/api/useUser'
-import type { UserCreate, UserUpdate } from '@/types/api'
-import { UserTable } from './UserTable'
+import { useLanguage } from '@/i18n/LanguageContext'
+import { UserRoles } from '@/lib/role-utils'
+import type { User, UserCreate, UserUpdate } from '@/types/api'
+
 import { AddUserDialog } from './AddUserDialog'
 import { EditUserDialog } from './EditUserDialog'
-import { UserRoles } from '@/lib/role-utils'
+import { UserTable } from './UserTable'
 
 export function UserManagement() {
 	const { t } = useLanguage()
 
-	const { data: apiUsers = [], isLoading } = useUsers()
+	const { data: users = [], isLoading } = useUsers()
 	const createMutation = useCreateUser()
 	const updateMutation = useUpdateUser()
 	const deleteMutation = useDeleteUser()
 
-	const users = useMemo<User[]>(() => {
-		return apiUsers.map(
-			(apiUser): User => ({
-				id: apiUser.id,
-				name: apiUser.full_name,
-				email: apiUser.email,
-				phone: apiUser.phone || '',
-				role: apiUser.role,
-				password: '',
-				status: apiUser.is_active ? 'active' : 'disabled',
-			}),
-		)
-	}, [apiUsers])
-
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 	const [editingUser, setEditingUser] = useState<User | null>(null)
+	const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
 	const [formData, setFormData] = useState<Partial<User>>({
-		name: '',
-		email: '',
+		fullName: '',
+		email: 'test@example.com',
 		phone: '',
-		role: UserRoles.VIEWER,
-		password: 'password',
-		status: 'active',
+		role: UserRoles.USER,
+		password: '',
+		isActive: true,
+		canViewContractHistory: false,
 	})
 
 	const handleAddUser = async () => {
-		if (!formData.name || !formData.email || !formData.phone || !formData.password) return
+		if (!formData.fullName || !formData.password) {
+			alert(t('missingRequiredFields'))
+			return
+		}
 
-		if (users.some((u) => u.email === formData.email || u.phone === formData.phone)) {
+		const role = formData.role || UserRoles.USER
+		const isAdminRole = role === UserRoles.ADMIN
+
+		if (users.some((u) => (isAdminRole ? u.phone === formData.phone : u.email === formData.email))) {
 			alert(t('emailOrPhoneExists'))
 			return
 		}
 
 		try {
 			const newUserData: UserCreate = {
-				full_name: formData.name,
-				email: formData.email,
-				phone: formData.phone,
+				fullName: formData.fullName,
+				email: isAdminRole ? (formData.email ?? '') : `${formData.phone}@example.com`,
+				phone: isAdminRole ? '' : (formData.phone ?? ''),
 				password: formData.password,
-				role: formData.role || 'viewer',
+				role,
+				canViewContractHistory: role === UserRoles.USER ? !!formData.canViewContractHistory : false,
 			}
 
 			await createMutation.mutateAsync(newUserData)
@@ -71,12 +68,17 @@ export function UserManagement() {
 	const handleUpdateUser = async () => {
 		if (!editingUser) return
 
+		const role = formData.role || UserRoles.USER
+		const isAdminRole = role === UserRoles.ADMIN
+
 		try {
 			const updateData: UserUpdate = {
-				full_name: formData.name,
-				email: formData.email,
-				phone: formData.phone,
-				role: formData.role || 'viewer',
+				fullName: formData.fullName,
+				email: isAdminRole ? (formData.email ?? '') : `${formData.phone}@example.com`,
+				phone: isAdminRole ? '' : (formData.phone ?? ''),
+				role,
+				isActive: formData.isActive,
+				canViewContractHistory: role === UserRoles.USER ? !!formData.canViewContractHistory : false,
 			}
 
 			await updateMutation.mutateAsync({ userId: editingUser.id, data: updateData })
@@ -87,9 +89,16 @@ export function UserManagement() {
 		}
 	}
 
-	const handleToggleStatus = async (id: string) => {
+	const handleToggleStatus = (id: string) => {
+		setDeletingUserId(id)
+	}
+
+	const handleConfirmToggleStatus = async () => {
+		if (!deletingUserId) return
+
 		try {
-			await deleteMutation.mutateAsync(id)
+			await deleteMutation.mutateAsync(deletingUserId)
+			setDeletingUserId(null)
 		} catch (_error) {
 			alert(t('failedToToggleUserStatus'))
 		}
@@ -97,24 +106,26 @@ export function UserManagement() {
 
 	const resetForm = () => {
 		setFormData({
-			name: '',
+			fullName: '',
 			email: '',
 			phone: '',
-			role: UserRoles.VIEWER,
-			password: 'password',
-			status: 'active',
+			role: UserRoles.USER,
+			password: '',
+			isActive: true,
+			canViewContractHistory: false,
 		})
 	}
 
 	const openEditDialog = (user: User) => {
 		setEditingUser(user)
 		setFormData({
-			name: user.name,
+			fullName: user.fullName,
 			email: user.email,
 			phone: user.phone,
 			role: user.role,
 			password: user.password,
-			status: user.status,
+			isActive: user.isActive,
+			canViewContractHistory: user.canViewContractHistory ?? false,
 		})
 	}
 
@@ -138,12 +149,7 @@ export function UserManagement() {
 				/>
 			</header>
 
-			<UserTable
-				users={users}
-				isLoading={isLoading}
-				onEdit={openEditDialog}
-				onToggleStatus={handleToggleStatus}
-			/>
+			<UserTable users={users} isLoading={isLoading} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} />
 
 			<EditUserDialog
 				user={editingUser}
@@ -155,6 +161,19 @@ export function UserManagement() {
 				setFormData={setFormData}
 				onSubmit={handleUpdateUser}
 				isPending={updateMutation.isPending}
+			/>
+
+			<CommonConfirmDialog
+				open={!!deletingUserId}
+				onOpenChange={(open) => {
+					if (!open) setDeletingUserId(null)
+				}}
+				title={t('delete')}
+				content={t('confirmDeleteUser')}
+				cancelText={t('cancel')}
+				submitText={deleteMutation.isPending ? t('deleting') : t('delete')}
+				onSubmit={handleConfirmToggleStatus}
+				isPending={deleteMutation.isPending}
 			/>
 		</div>
 	)

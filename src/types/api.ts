@@ -1,175 +1,222 @@
 export interface LoginRequest {
 	username: string
 	password: string
-	grant_type?: string | null
+	grantType?: string | null
 	scope?: string
-	client_id?: string | null
-	client_secret?: string | null
+	clientId?: string | null
+	clientSecret?: string | null
 }
 
 export interface TokenResponse {
-	access_token: string
-	refresh_token: string
-	token_type: string
+	accessToken: string
+	refreshToken: string
+	tokenType: string
+	role: UserRole
 }
 
 export interface RefreshTokenRequest {
-	refresh_token: string
+	refreshToken: string
 }
 
 export interface PasswordChangeRequest {
-	old_password: string
-	new_password: string
+	oldPassword: string
+	newPassword: string
 }
 
-export type Role = 'superadmin' | 'admin' | 'operator' | 'viewer'
+export type UserRole = 'admin' | 'operator' | 'user'
 
 export interface UserCreate {
 	id?: string | null
-	full_name: string
+	fullName: string
 	phone: string
 	email: string
 	password: string
-	role?: Role | null
-	is_active?: boolean | null
-	deleted_at?: number | null
+	role?: UserRole | null
+	isActive?: boolean | null
+	canViewContractHistory?: boolean | null
+	deletedAt?: number | null
 }
 
 export interface UserUpdate {
 	id?: string | null
-	full_name?: string | null
+	fullName?: string | null
 	phone?: string | null
 	email?: string | null
 	password?: string | null
-	role?: Role | null
-	is_active?: boolean | null
-	deleted_at?: number | null
+	role: UserRole
+	isActive?: boolean | null
+	canViewContractHistory?: boolean | null
+	deletedAt?: number | null
 }
 
 export interface User {
 	id: string
-	full_name: string
+	fullName: string
 	phone: string
 	email: string
-	role: Role
-	is_active: boolean
-	created_at?: number
-	updated_at?: number
-	deleted_at?: number | null
+	password?: string
+	role: UserRole
+	isActive: boolean
+	canViewContractHistory?: boolean
+	createdAt?: number
+	updatedAt?: number
+	deletedAt?: number | null
 }
 
-export type ElevatorStatus = 'ACTIVE' | 'MAINTENANCE' | 'OUT_OF_ORDER'
+export type ElevatorStatus = 'active' | 'out_of_order'
 
 export interface ElevatorCreate {
 	id?: string | null
-	elevator_code: string
-	name?: string | null
-	address?: string | null
-	description?: string | null
-	min_floor?: number | null
-	max_floor?: number | null
+	code: string
+	address: string
+	minFloor: number
+	maxFloor: number
 	status?: ElevatorStatus | null
-	installation_at?: number | null
-	maintenance_cycle_months?: number | null
+	operatorIds?: string[]
 }
 
 export interface ElevatorUpdate {
 	id?: string | null
-	elevator_code?: string | null
-	name?: string | null
+	code?: string | null
 	address?: string | null
-	description?: string | null
-	min_floor?: number | null
-	max_floor?: number | null
+	minFloor?: number | null
+	maxFloor?: number | null
 	status?: ElevatorStatus | null
-	installation_at?: number | null
-	maintenance_cycle_months?: number | null
+	operatorIds?: string[]
+}
+
+export interface ElevatorOperator {
+	id: string
+	fullName: string
+	phone: string
+	email: string
+	role: UserRole
 }
 
 export interface Elevator {
 	id: string
-	elevator_code: string
-	name?: string | null
+	code: string
 	address?: string | null
-	description?: string | null
-	min_floor?: number | null
-	max_floor?: number | null
+	minFloor?: number | null
+	maxFloor?: number | null
 	status: ElevatorStatus
-	installation_at?: number | null
-	maintenance_cycle_months?: number | null
-	created_at?: number
-	updated_at?: number
+	operatorIds?: string[]
+	operators?: ElevatorOperator[]
+	name?: string | null
+	createdAt?: number
+	updatedAt?: number
 }
 
 export type RelationType = 'TECHNICIAN' | 'VIEWER'
 
 export interface ElevatorUserCreate {
 	id?: string | null
-	elevator_id: string
-	user_id: string
-	relation_type: RelationType
+	elevatorId: string
+	userId: string
+	relationType: RelationType
 }
 
 export interface ElevatorUserUpdate {
 	id?: string | null
-	elevator_id?: string | null
-	user_id?: string | null
-	relation_type?: RelationType | null
+	elevatorId?: string | null
+	userId?: string | null
+	relationType?: RelationType | null
 }
 
 export interface ElevatorUser {
 	id: string
-	elevator_id: string
-	user_id: string
-	relation_type: RelationType
-	created_at?: number
-	updated_at?: number
+	elevatorId: string
+	userId: string
+	relationType: RelationType
+	createdAt?: number
+	updatedAt?: number
 }
+
+export type ContractStatus = 'active' | 'expired'
 
 export interface ContractCreate {
 	id?: string | null
-	elevator_id: string
-	customer_id: string
-	signed_at?: number | null
-	expired_at?: number | null
-	contract_value?: number | string | null
+	elevatorIds: string[]
+	customerId: string
+	signedAt?: number | null
+	expiredAt?: number | null
+	contractValue?: number | string | null
 	description?: string | null
-	is_active?: boolean | null
+	isActive?: boolean | null
 }
 
 export interface ContractUpdate {
 	id?: string | null
-	elevator_id?: string | null
-	customer_id?: string | null
-	signed_at?: number | null
-	expired_at?: number | null
-	contract_value?: number | string | null
+	elevatorIds?: string[] | []
+	customerId?: string | null
+	signedAt?: number | null
+	expiredAt?: number | null
+	contractValue?: number | string | null
 	description?: string | null
-	is_active?: boolean | null
+	isActive?: boolean | null
+}
+
+export interface UserContract {
+	id: string
+	fullName: string
+	phone: string
+	email: string
+	role: UserRole
+	isActive: boolean
+}
+
+export interface ElevatorContract {
+	id: string
+	code: string
+	name?: string | null
+	address?: string | null
+	description?: string | null
+	minFloor?: number | null
+	maxFloor?: number | null
+	status: ElevatorStatus
+	installationAt?: number | null
+	createdAt?: number
+	updatedAt?: number
+	operators: UserContract[]
 }
 
 export interface Contract {
 	id: string
-	elevator_id: string
-	customer_id: string
-	signed_at?: number | null
-	expired_at?: number | null
-	contract_value?: number | null
+	elevators: ElevatorContract[]
+	customer: UserContract
+	signedAt?: number | null
+	expiredAt?: number | null
+	contractValue?: number | null
 	description?: string | null
-	is_active: boolean
-	created_at?: number
-	updated_at?: number
+	status: ContractStatus
+	priority?: number
+	note?: string | null
+	isActive: boolean
+	createdAt?: number
+	updatedAt?: number
 }
 
-export type IncidentStatus = 'NEW' | 'IN_PROGRESS' | 'PENDING_APPROVAL' | 'COMPLETED' | 'REJECTED'
+export interface ContractFormData {
+	customerId: string
+	elevatorIds: string[]
+	signedAt?: number
+	expiredAt?: number
+	contractValue?: number | string | null
+	status: ContractStatus
+	priority?: number
+	note?: string
+	description?: string
+}
+
+export type IncidentStatus = 'new' | 'in_progress' | 'in_review' | 'close' | 'reopen'
 
 export interface IncidentCreate {
 	id?: string | null
 	title: string
-	elevator_id: string
+	elevatorId: string
 	description?: string | null
-	reported_user?: string | null
-	assigned_user?: string | null
+	reportedUser?: string | null
+	assignedUser?: string | null
 	priority?: number | null
 	status?: IncidentStatus | null
 }
@@ -177,59 +224,155 @@ export interface IncidentCreate {
 export interface IncidentUpdate {
 	id?: string | null
 	title?: string | null
-	elevator_id?: string | null
+	elevatorId?: string | null
 	description?: string | null
-	reported_user?: string | null
-	assigned_user?: string | null
+	reportedUser?: string | null
+	assignedUser?: string | null
 	priority?: number | null
 	status?: IncidentStatus | null
 }
 
-export interface Incident {
+export interface ElevatorIncident {
 	id: string
-	title: string
-	elevator_id: string
+	code: string
+	name?: string | null
+	address?: string | null
+	createdAt: number
 	description?: string | null
-	reported_user?: string | null
-	assigned_user?: string | null
-	priority?: number | null
+	installationAt?: number | null
+	maxFloor?: number | null
+	minFloor?: number | null
+	operators?: ElevatorOperator[]
+	status: ElevatorStatus
+	updatedAt?: number
+}
+
+export interface Incident {
+	assignedUser: string | null
+	assignedUserId: string | null
+	createdAt: number
+	description: string | null
+	elevator: ElevatorIncident
+	elevatorId: string
+	id: string
+	priority: number
+	reportedUser: string
+	reportedUserId: number
 	status: IncidentStatus
-	created_at?: number
-	updated_at?: number
+	title: string
+	updatedAt: number
+}
+
+export interface IncidentFormData {
+	elevatorId: string
+	description: string
+	priority: number
+	status: IncidentStatus
+}
+
+export type MaintenanceStatus =
+	| 'scheduled'
+	| 'upcoming'
+	| 'overdue'
+	| 'in_progress'
+	| 'under_review'
+	| 'completed'
+	| 'failed'
+
+export interface MaintenanceScheduleCreate {
+	id?: string | null
+	elevatorId: string
+	contractId?: string | null
+	scheduledStartAt: number
+	scheduledEndAt: number
+	assignedOperatorId?: string | null
+	status?: MaintenanceStatus | null
+	completedAt?: number | null
+	notes?: string | null
+}
+
+export interface MaintenanceScheduleUpdate {
+	id?: string | null
+	elevatorId?: string | null
+	contractId?: string | null
+	scheduledStartAt?: number | null
+	scheduledEndAt?: number | null
+	assignedOperatorId?: string | null
+	status?: MaintenanceStatus | null
+	completedAt?: number | null
+	notes?: string | null
+}
+
+export interface ContractBasic {
+	id: string
+	customerId?: string | null
+	signedAt?: number | null
+	expiredAt?: number | null
+	contractValue?: number | null
+	description?: string | null
+	priority?: number | null
+	isActive?: boolean | null
+	createdAt?: number | null
+	updatedAt?: number | null
+}
+
+export interface MaintenanceSchedule {
+	id: string
+	elevatorId: string
+	contractId?: string
+	scheduledStartAt: number
+	scheduledEndAt: number
+	assignedOperatorId?: string
+	status: MaintenanceStatus
+	completedAt?: number
+	notes?: string
+	createdAt?: number
+	updatedAt?: number
+	elevator?: Elevator
+	contract?: ContractBasic
+	assignedOperator?: User
+}
+
+export interface MaintenanceFormData {
+	elevatorId: string
+	scheduledStartAt?: number
+	status: MaintenanceStatus
+	completedAt?: number
+	notes?: string
 }
 
 export type EntityType = 'CONTRACT' | 'INCIDENT'
 
 export interface FileCreate {
 	id?: string | null
-	entity_type: EntityType
-	entity_id: string
-	file_url: string
-	file_name?: string | null
-	file_type?: string | null
-	uploaded_user?: string | null
+	entityType: EntityType
+	entityId: string
+	fileUrl: string
+	fileName?: string | null
+	fileType?: string | null
+	uploadedUser?: string | null
 }
 
 export interface FileUpdate {
 	id?: string | null
-	entity_type?: EntityType | null
-	entity_id?: string | null
-	file_url?: string | null
-	file_name?: string | null
-	file_type?: string | null
-	uploaded_user?: string | null
+	entityType?: EntityType | null
+	entityId?: string | null
+	fileUrl?: string | null
+	fileName?: string | null
+	fileType?: string | null
+	uploadedUser?: string | null
 }
 
 export interface File {
 	id: string
-	entity_type: EntityType
-	entity_id: string
-	file_url: string
-	file_name?: string | null
-	file_type?: string | null
-	uploaded_user?: string | null
-	created_at?: number
-	updated_at?: number
+	entityType: EntityType
+	entityId: string
+	fileUrl: string
+	fileName?: string | null
+	fileType?: string | null
+	uploadedUser?: string | null
+	createdAt?: number
+	updatedAt?: number
 }
 
 export interface ValidationError {

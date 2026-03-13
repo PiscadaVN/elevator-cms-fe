@@ -1,4 +1,7 @@
 import type { HTTPValidationError } from '@/types/api'
+import { router } from '@/router'
+
+import { keysToCamel, keysToSnake } from './case-converter'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -37,10 +40,51 @@ export const getRefreshToken = (): string | null => {
 
 interface FetchOptions extends RequestInit {
 	requireAuth?: boolean
+	isRetry?: boolean
+}
+
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
+
+async function refreshAccessToken(): Promise<boolean> {
+	const refreshToken = getRefreshToken()
+
+	if (!refreshToken) {
+		return false
+	}
+
+	try {
+		const response = await fetch(`${API_BASE_URL}auth/refresh_token`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ refresh_token: refreshToken }),
+		})
+
+		if (!response.ok) {
+			return false
+		}
+
+		const data = await response.json()
+		const camelData = keysToCamel<{ accessToken: string; refreshToken?: string }>(data)
+
+		if (camelData.accessToken) {
+			setAuthToken(camelData.accessToken)
+			if (camelData.refreshToken) {
+				setRefreshToken(camelData.refreshToken)
+			}
+			return true
+		}
+
+		return false
+	} catch {
+		return false
+	}
 }
 
 export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-	const { requireAuth = true, headers = {}, ...restOptions } = options
+	const { requireAuth = true, headers = {}, body, isRetry = false, ...restOptions } = options
 
 	const url = `${API_BASE_URL}${endpoint}`
 
@@ -56,14 +100,57 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
 		}
 	}
 
+	// Convert request body from camelCase to snake_case
+	let processedBody: BodyInit | undefined
+	if (body) {
+		if (requestHeaders['Content-Type'] === 'application/json') {
+			try {
+				const parsedBody = typeof body === 'string' ? JSON.parse(body) : body
+				const snakeCaseBody = keysToSnake(parsedBody)
+				processedBody = JSON.stringify(snakeCaseBody)
+			} catch {
+				// If parsing fails, use original body
+				processedBody = body as BodyInit
+			}
+		} else {
+			processedBody = body as BodyInit
+		}
+	}
+
 	try {
 		const response = await fetch(url, {
 			...restOptions,
+			body: processedBody,
 			headers: requestHeaders,
 		})
 
 		if (response.status === 204 || response.headers.get('content-length') === '0') {
 			return undefined as T
+		}
+
+		if (response.status === 401 && !isRetry) {
+			// Try to refresh token
+			if (!isRefreshing) {
+				isRefreshing = true
+				refreshPromise = refreshAccessToken().finally(() => {
+					isRefreshing = false
+					refreshPromise = null
+				})
+			}
+
+			const refreshSuccess = await refreshPromise
+
+			if (refreshSuccess) {
+				// Retry the original request with new token
+				return apiFetch<T>(endpoint, { ...options, isRetry: true })
+			} else {
+				// Refresh failed, redirect to login
+				removeAuthToken()
+				router.navigate({
+					to: '/login',
+				})
+				throw new ApiError('Unauthorized', response.status)
+			}
 		}
 
 		const data = await response.json()
@@ -72,7 +159,8 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
 			throw new ApiError(data.detail || data.message || 'API request failed', response.status, data)
 		}
 
-		return data as T
+		// Convert response data from snake_case to camelCase
+		return keysToCamel<T>(data)
 	} catch (error) {
 		if (error instanceof ApiError) {
 			throw error

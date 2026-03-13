@@ -14,20 +14,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/i18n/LanguageContext'
-import type { Elevator, IncidentFormData } from '@/types/api'
-import { getPriorityLabel, IncidentPriorityEnum } from '@/features/incident/helpers/status-transition'
+import type { Elevator, MaintenanceFormData } from '@/types/api'
+import { toDateInputValue } from '@/lib/date-utils'
 
-interface AddIncidentDialogProps {
+interface AddMaintenanceDialogProps {
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	formData: IncidentFormData
-	setFormData: (data: IncidentFormData) => void
+	formData: MaintenanceFormData
+	setFormData: (data: MaintenanceFormData) => void
 	elevators: Elevator[]
 	onSubmit: () => void
 	isPending?: boolean
 }
 
-export function AddIncidentDialog({
+export function AddMaintenanceDialog({
 	open,
 	onOpenChange,
 	formData,
@@ -35,65 +35,64 @@ export function AddIncidentDialog({
 	elevators,
 	onSubmit,
 	isPending,
-}: AddIncidentDialogProps) {
+}: AddMaintenanceDialogProps) {
 	const { t } = useLanguage()
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogTrigger asChild>
 				<Button>
-					<Plus className="w-4 h-4 mr-2" /> {t('reportIncident')}
+					<Plus className="w-4 h-4 mr-2" /> {t('addMaintenance')}
 				</Button>
 			</DialogTrigger>
+
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{t('reportIncident')}</DialogTitle>
-					<DialogDescription>{t('createIncidentDesc')}</DialogDescription>
+					<DialogTitle>{t('addMaintenance')}</DialogTitle>
+					<DialogDescription>{t('createMaintenanceDesc')}</DialogDescription>
 				</DialogHeader>
+
 				<div className="grid gap-4 py-4">
 					<div className="space-y-2">
 						<Label>{t('elevator')}</Label>
 						<Select
 							value={formData.elevatorId}
-							onValueChange={(v) => setFormData({ ...formData, elevatorId: v } as IncidentFormData)}
+							onValueChange={(value) => setFormData({ ...formData, elevatorId: value })}
 						>
 							<SelectTrigger>
 								<SelectValue placeholder={t('selectElevatorPlaceholder')} />
 							</SelectTrigger>
 							<SelectContent>
-								{elevators.map((el) => (
-									<SelectItem key={el.id} value={el.id}>
-										{el.code} - {el.address}
+								{elevators.map((elevator) => (
+									<SelectItem key={elevator.id} value={elevator.id}>
+										{elevator.code} - {elevator.address ?? t('notAvailable')}
 									</SelectItem>
 								))}
 							</SelectContent>
 						</Select>
 					</div>
+
 					<div className="space-y-2">
-						<Label>{t('description')}</Label>
+						<Label>{t('scheduledAt')}</Label>
 						<Input
-							value={formData.description ?? ''}
-							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-							placeholder={t('describeProblemPlaceholder')}
+							type="date"
+							value={toDateInputValue(formData.scheduledStartAt)}
+							onChange={(e) =>
+								setFormData({
+									...formData,
+									scheduledStartAt: e.target.value ? new Date(e.target.value).getTime() / 1000 : undefined,
+								})
+							}
 						/>
 					</div>
+
 					<div className="space-y-2">
-						<Label>{t('priority')}</Label>
-						<Select
-							value={formData.priority.toString()}
-							onValueChange={(v) => setFormData({ ...formData, priority: Number(v) })}
-						>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{Object.values(IncidentPriorityEnum).map((priority) => (
-									<SelectItem key={priority} value={priority.toString()}>
-										{getPriorityLabel(priority, t)}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<Label>{t('note')}</Label>
+						<Input
+							value={formData.notes}
+							onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
+							placeholder={t('maintenanceNotesPlaceholder')}
+						/>
 					</div>
 				</div>
 				<DialogFooter>

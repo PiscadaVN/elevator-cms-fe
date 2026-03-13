@@ -3,20 +3,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import { useAuthStore } from '@/features/auth/store/auth.store'
-import type { User } from '@/types'
-import type { User as ApiUser } from '@/types/api'
-
-const mapApiUserToLocal = (apiUser: ApiUser): User => {
-	return {
-		id: apiUser.id,
-		name: apiUser.full_name,
-		email: apiUser.email,
-		phone: apiUser.phone,
-		role: apiUser.role,
-		status: apiUser.is_active ? 'active' : 'disabled',
-		password: '',
-	}
-}
+import type { User } from '@/types/api'
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
 	const [queryClient] = useState(
@@ -26,7 +13,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
 					onSuccess: (data, query) => {
 						if (query.queryKey[0] === 'currentUser' && data) {
 							useAuthStore.setState({
-								user: mapApiUserToLocal(data as ApiUser),
+								user: data as User,
 								isLoading: false,
 								isInitialized: true,
 							})
