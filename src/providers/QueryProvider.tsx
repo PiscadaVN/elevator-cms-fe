@@ -3,6 +3,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import { useAuthStore } from '@/features/auth/store/auth.store'
+import type { User } from '@/types/api'
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
 	const [queryClient] = useState(
@@ -12,7 +13,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
 					onSuccess: (data, query) => {
 						if (query.queryKey[0] === 'currentUser' && data) {
 							useAuthStore.setState({
-								user: data,
+								user: data as User,
 								isLoading: false,
 								isInitialized: true,
 							})

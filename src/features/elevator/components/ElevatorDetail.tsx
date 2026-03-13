@@ -70,7 +70,7 @@ export function ElevatorDetail({ elevatorId }: ElevatorDetailProps) {
 							</div>
 							<div className="space-y-1">
 								<Label className="text-muted-foreground text-xs">{t('status')}</Label>
-								<div>{elevatorDetail?.status === 'broken' ? t('broken') : t('normal')}</div>
+								<div>{elevatorDetail?.status === 'out_of_order' ? t('broken') : t('normal')}</div>
 							</div>
 						</div>
 
