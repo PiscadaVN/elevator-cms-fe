@@ -57,14 +57,14 @@ export function IncidentTable({ incidents, isLoading, onView, onEdit, onDelete, 
 						</TableHeader>
 
 						<TableBody>
-							{incidents.length === 0 ? (
+							{incidents?.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
 										{t('noIncidentsFound')}
 									</TableCell>
 								</TableRow>
 							) : (
-								incidents.map((incident) => {
+								incidents?.map((incident) => {
 									const nextStatuses = getNextIncidentStatuses(incident.status)
 
 									return (
@@ -87,13 +87,13 @@ export function IncidentTable({ incidents, isLoading, onView, onEdit, onDelete, 
 												<Select
 													value={incident.status}
 													onValueChange={(value) => onUpdateStatus(incident.id, value as IncidentStatus)}
-													disabled={nextStatuses.length === 1}
+													disabled={nextStatuses?.length === 1}
 												>
 													<SelectTrigger>
 														<SelectValue />
 													</SelectTrigger>
 													<SelectContent>
-														{nextStatuses.map((status) => (
+														{nextStatuses?.map((status) => (
 															<SelectItem key={status} value={status}>
 																{getStatusLabel(status, t)}
 															</SelectItem>
